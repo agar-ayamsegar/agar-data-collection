@@ -1,10 +1,15 @@
 package main
 
-import "github.com/agar-ayamsegar/agar-data-collection/internal/utils/config"
+import (
+	"fmt"
+
+	"github.com/agar-ayamsegar/agar-data-collection/internal/db/mongo"
+	"github.com/agar-ayamsegar/agar-data-collection/internal/utils/config"
+)
 
 func main() {
 	appCfg := config.New()
+	db := mongo.New(appCfg)
 
-	appCfg.Logger.Info("hello world")
-
+	fmt.Println(db.DSN())
 }

@@ -7,11 +7,14 @@
     "port": 0,
     "user": "",
     "pass": "",
-    "table": ""
+    "name": "",
+    "max_open_conn": 0,
+    "max_open_time": 0,
+    "min_open_conn": 0
   },
   "server": {
-    "host": "",
-    "port": ""
+    "host": "localhost",
+    "port": 4000
   },
   "basic": {
     "user": "",

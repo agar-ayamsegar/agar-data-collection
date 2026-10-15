@@ -6,12 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="e34de2a8-6fac-4c54-9186-ea2b7bb80a6f" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/agar-data-collection.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/go.imports.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/server/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/env/sample.config.json" beforeDir="false" afterPath="$PROJECT_DIR$/env/sample.config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/db/mongo/mongo.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/db/mongo/mongo.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,67 +32,96 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitToolBoxStore">
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="feat/implement-mongo-conn" />
+                    <option name="lastUsedInstant" value="1792031245" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="feat/implement-app-cfg" />
+                    <option name="lastUsedInstant" value="1792029113" />
+                  </RecentBranch>
+                  <RecentBranch>
+                    <option name="branchName" value="main" />
+                    <option name="lastUsedInstant" value="1792029112" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
+  </component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.1596235027916803E-7" />
-      <entry key="MS500" value="0.04790453892532497" />
-      <entry key="S2" value="0.9291479937345953" />
-      <entry key="S5" value="2.5995604752591865" />
-      <entry key="S10" value="5.9769360285502" />
-      <entry key="S30" value="17.383137498951868" />
-      <entry key="S60" value="27.64158500502194" />
-      <entry key="M2" value="42.43861732884073" />
-      <entry key="M5" value="89.35221955960694" />
-      <entry key="M10" value="146.67060922466635" />
-      <entry key="M15" value="179.4047698615669" />
-      <entry key="M30" value="223.40067927000095" />
-      <entry key="H1" value="250.91565401123327" />
-      <entry key="H2" value="266.3381767288327" />
-      <entry key="H4" value="274.50763641490147" />
-      <entry key="D1" value="281.5616031760774" />
-      <entry key="W1" value="282.79394368568387" />
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0000048351770956" />
+      <entry key="S2" value="1.053907559938617" />
+      <entry key="S5" value="2.3853456263681254" />
+      <entry key="S10" value="7.809687193008041" />
+      <entry key="S30" value="23.152987225740308" />
+      <entry key="S60" value="31.892050582917953" />
+      <entry key="M2" value="39.86562824171127" />
+      <entry key="M5" value="59.52049403003419" />
+      <entry key="M10" value="100.47142641284901" />
+      <entry key="M15" value="146.18643262651844" />
+      <entry key="M30" value="252.4707045634963" />
+      <entry key="H1" value="355.3965027811072" />
+      <entry key="H2" value="428.55925747865194" />
+      <entry key="H4" value="472.40413424844957" />
+      <entry key="D1" value="513.301817920791" />
+      <entry key="W1" value="520.7463605850501" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.000000126093895" />
-      <entry key="S5" value="1.0037420302820346" />
-      <entry key="S10" value="1.1276865588740077" />
-      <entry key="S30" value="2.7328931592709385" />
-      <entry key="S60" value="4.936296136663255" />
-      <entry key="M2" value="7.462793039113689" />
-      <entry key="M5" value="11.184572101883614" />
-      <entry key="M10" value="14.344570721940457" />
-      <entry key="M15" value="16.00455047502981" />
-      <entry key="M30" value="18.160955392056703" />
-      <entry key="H1" value="19.48091658693775" />
-      <entry key="H2" value="20.213516866416192" />
-      <entry key="H4" value="20.599747391756786" />
-      <entry key="D1" value="20.93229311858387" />
-      <entry key="W1" value="20.990302820485798" />
+      <entry key="MS100" value="3.184160967151241E-182" />
+      <entry key="MS500" value="5.018789755815735E-37" />
+      <entry key="S2" value="8.416853162935798E-10" />
+      <entry key="S5" value="2.3445521665602497E-4" />
+      <entry key="S10" value="0.015311930533282793" />
+      <entry key="S30" value="0.24835722469141322" />
+      <entry key="S60" value="0.5207337049677789" />
+      <entry key="M2" value="1.3685095533187952" />
+      <entry key="M5" value="6.875225030783552" />
+      <entry key="M10" value="16.320728528135017" />
+      <entry key="M15" value="23.84619605000075" />
+      <entry key="M30" value="37.543780595067325" />
+      <entry key="H1" value="48.76157369065507" />
+      <entry key="H2" value="56.10916203134019" />
+      <entry key="H4" value="60.339667213457545" />
+      <entry key="D1" value="64.1913354663236" />
+      <entry key="W1" value="64.8836652622938" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.8375095971822695E-4" />
-      <entry key="MS500" value="0.20318194742317083" />
-      <entry key="S2" value="1.4321334864808946" />
-      <entry key="S5" value="3.3126425409726483" />
-      <entry key="S10" value="6.922003176316802" />
-      <entry key="S30" value="19.99005205647863" />
-      <entry key="S60" value="32.456612847047914" />
-      <entry key="M2" value="49.79835351938743" />
-      <entry key="M5" value="100.47038961624169" />
-      <entry key="M10" value="160.97220569628723" />
-      <entry key="M15" value="195.3773089074792" />
-      <entry key="M30" value="241.54344461595022" />
-      <entry key="H1" value="270.3868041009201" />
-      <entry key="H2" value="286.54662331873783" />
-      <entry key="H4" value="295.10479925786376" />
-      <entry key="D1" value="302.4934584355558" />
-      <entry key="W1" value="303.78418377776586" />
+      <entry key="MS100" value="0.9201876506248751" />
+      <entry key="MS500" value="0.9835068691522699" />
+      <entry key="S2" value="1.0496447642124271" />
+      <entry key="S5" value="2.3826471749785427" />
+      <entry key="S10" value="7.818960541890342" />
+      <entry key="S30" value="23.38555807526559" />
+      <entry key="S60" value="32.3971860753231" />
+      <entry key="M2" value="41.21284329669824" />
+      <entry key="M5" value="66.35345217706866" />
+      <entry key="M10" value="116.74395947584938" />
+      <entry key="M15" value="169.98643174629044" />
+      <entry key="M30" value="289.97859432992743" />
+      <entry key="H1" value="404.1348656447742" />
+      <entry key="H2" value="484.6550818803224" />
+      <entry key="H4" value="532.7366326110453" />
+      <entry key="D1" value="577.4918825639745" />
+      <entry key="W1" value="585.6298423473092" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -104,32 +133,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginOnboardingV2&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginStorageMigration&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.analysis.ui.options.defaults&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/beewijaya&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
+    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.analysis.ui.options.defaults": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "feat/implement-mongo-conn",
+    "go.sdk.automatically.set": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/Users/beewijaya",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="agar-data-collection" />
