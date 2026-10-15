@@ -3,8 +3,8 @@
     "level": 6
   },
   "database": {
+    "type": "",
     "host": "",
-    "port": 0,
     "user": "",
     "pass": "",
     "name": "",

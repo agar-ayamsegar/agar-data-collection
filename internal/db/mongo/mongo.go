@@ -43,11 +43,11 @@ func New(app *config.AppConfig) *DB {
 
 func (d *DB) DSN() string {
 	return fmt.Sprintf(
-		"mongodb://%s:%s@%s:%d/%s?connect=direct",
+		"%s://%s:%s@%s/%s",
+		d.app.Cfg.GetString("database.type"),
 		d.app.Cfg.GetString("database.user"),
 		d.app.Cfg.GetString("database.pass"),
 		d.app.Cfg.GetString("database.host"),
-		d.app.Cfg.GetInt("database.port"),
 		d.app.Cfg.GetString("database.name"),
 	)
 }
