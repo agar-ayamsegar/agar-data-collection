@@ -15,7 +15,7 @@ type HealthHandler struct {
 	app *config.AppConfig
 }
 
-func NewHealthHandler(app *config.AppConfig) *HealthHandler {
+func NewHealthHandler(app *config.AppConfig) IHealthHandler {
 	return &HealthHandler{
 		app: app,
 	}
