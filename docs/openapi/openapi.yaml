@@ -1,0 +1,16 @@
+openapi: 3.1.1
+info:
+  title: Agar Data Collection
+  description: collection of api that doing freshness-chicken data collection
+  version: 0.0.1
+  license:
+    name: Agar
+    identifier: agar-data-collection
+    url: 'http://localhost:4001'
+
+servers:
+  - url: localhost:4000
+    description: local
+
+
+
