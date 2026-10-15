@@ -58,4 +58,5 @@ func (r *RestDelivery) RegisterRoutes() {
 	// gas
 	gasRoute := versionRoute.Group("/gas")
 	gasRoute.POST("", r.gasHandler.GasSinglePOST)
+	gasRoute.GET("/:author", r.gasHandler.ListGasByAuthor)
 }

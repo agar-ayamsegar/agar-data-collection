@@ -10,6 +10,7 @@ import (
 
 type IGasUsecase interface {
 	CreateGas(ctx context.Context, gas domain.Gas) (domain.Gas, error)
+	ListGas(ctx context.Context, author string) ([]domain.Gas, error)
 }
 
 type GasUsecase struct {
@@ -34,6 +35,18 @@ func (g *GasUsecase) CreateGas(ctx context.Context, gas domain.Gas) (domain.Gas,
 	}
 
 	log.WithField("id", gas.ID).Info("creating the gas successfully")
+
+	return gas, nil
+}
+
+func (g *GasUsecase) ListGas(ctx context.Context, author string) ([]domain.Gas, error) {
+	log := g.app.Logger.WithField("method", "ListGasByAuthor")
+
+	gas, err := g.repo.ListLogByAuthor(ctx, author)
+	if err != nil {
+		log.WithError(err).Error("failed to call db list gas by author")
+		return nil, err
+	}
 
 	return gas, nil
 }

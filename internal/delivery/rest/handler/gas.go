@@ -12,6 +12,7 @@ import (
 
 type IGasHandler interface {
 	GasSinglePOST(c *echo.Context) error
+	ListGasByAuthor(c *echo.Context) error
 }
 
 type GasHandler struct {
@@ -68,5 +69,28 @@ func (g *GasHandler) GasSinglePOST(c *echo.Context) error {
 	return c.JSON(http.StatusOK, domain.SuccessResponse[domain.Gas]{
 		Message: "successfully create gas",
 		Data:    d,
+	})
+}
+
+func (g *GasHandler) ListGasByAuthor(c *echo.Context) error {
+	ctx := c.Request().Context()
+	log := g.app.Logger.WithField("method", "ListGasByAuthor")
+	trace := c.Response().Header().Get(echo.HeaderXRequestID)
+
+	log.Info("gas request running")
+	author := c.Param("author")
+
+	res, err := g.gasUsecase.ListGas(ctx, author)
+	if err != nil {
+		return ResponseError(c, domain.ErrorResponse{
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
+			TraceID: trace,
+		}, g.app.Logger)
+	}
+
+	return c.JSON(http.StatusOK, domain.SuccessResponse[[]domain.Gas]{
+		Data:    res,
+		Message: "successfully list gas",
 	})
 }
