@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	
 
 	"github.com/agar-ayamsegar/agar-data-collection/internal/db/mongo"
 	"github.com/agar-ayamsegar/agar-data-collection/internal/domain"
@@ -11,7 +12,9 @@ import (
 
 type IGasRepository interface {
 	InsertLog(ctx context.Context, gas domain.Gas) error
+	InsertMany(ctx context.Context, gas []domain.Gas) error 
 	ListLogByAuthor(ctx context.Context, author string) ([]domain.Gas, error)
+	
 }
 
 type GasRepository struct {
@@ -33,6 +36,18 @@ func (repo *GasRepository) InsertLog(ctx context.Context, gas domain.Gas) error 
 		return err
 	}
 
+	return nil
+}
+
+func (repo *GasRepository) InsertMany (ctx context.Context, gas []domain.Gas) error {
+	if len(gas) == 0 {
+		return nil
+	}
+	_, err := repo.db.DB.Collection("gas").InsertMany(ctx, gas)
+	if err != nil {
+		repo.app.Logger.WithError(err).Error(ctx, "InsertMany: error when inserting gasses")
+		return err
+	}
 	return nil
 }
 
