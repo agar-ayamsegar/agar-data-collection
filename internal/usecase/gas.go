@@ -16,7 +16,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 var ErrInvalidFile = errors.New("invalid csv file")
 
 const dateLayout = "2006-01-02"
@@ -74,7 +73,6 @@ func (g *GasUsecase) ListGas(ctx context.Context, author string) ([]domain.Gas, 
 
 	return gas, nil
 }
-
 
 func (g *GasUsecase) ImportCSV(ctx context.Context, src io.Reader) (int, error) {
 	log := g.app.Logger.WithField("method", "ImportCSV")

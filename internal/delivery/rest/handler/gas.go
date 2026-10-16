@@ -1,14 +1,8 @@
 package handler
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/agar-ayamsegar/agar-data-collection/internal/domain"
 	"github.com/agar-ayamsegar/agar-data-collection/internal/usecase"
@@ -144,5 +138,8 @@ func (g *GasHandler) GasImportUpload(c *echo.Context) error {
 			TraceID: trace,
 		}, g.app.Logger)
 	}
-	return nil
+	return c.JSON(http.StatusOK, domain.SuccessResponse[int]{
+		Message: "successfully create gas",
+		Data:    inserted,
+	})
 }

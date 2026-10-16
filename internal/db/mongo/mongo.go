@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"fmt"
-
 	"github.com/agar-ayamsegar/agar-data-collection/internal/utils/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
