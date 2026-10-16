@@ -40,7 +40,7 @@ func (repo *GasRepository) InsertLog(ctx context.Context, gas domain.Gas) error 
 }
 
 func (repo *GasRepository) InsertMany (ctx context.Context, gas []domain.Gas) error {
-	if len (gas) == 0{
+	if len(gas) == 0 {
 		return nil
 	}
 	_, err := repo.db.DB.Collection("gas").InsertMany(ctx, gas)

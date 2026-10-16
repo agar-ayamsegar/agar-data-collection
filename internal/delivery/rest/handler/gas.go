@@ -20,7 +20,6 @@ import (
 type IGasHandler interface {
 	GasSinglePOST(c *echo.Context) error
 	GasImportUpload(c *echo.Context) error
-	GasImportPath(c *echo.Context) error
 	ListGasByAuthor(c *echo.Context) error
 }
 
@@ -132,11 +131,6 @@ func (g *GasHandler) GasImportUpload(c *echo.Context) error {
 
 	log.WithField("filename", fileHeader.Filename).Info("reading uploaded csv")
 
-	return g.runImport(c, ctx, src, trace)
-}
-
-
-func (g *GasHandler) runImport(c *echo.Context, ctx context.Context, src io.Reader, trace string) error {
 	inserted, err := g.gasUsecase.ImportCSV(ctx, src)
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -150,9 +144,5 @@ func (g *GasHandler) runImport(c *echo.Context, ctx context.Context, src io.Read
 			TraceID: trace,
 		}, g.app.Logger)
 	}
-
-	return c.JSON(http.StatusOK, domain.SuccessResponse[int]{
-		Message: "successfully imported gas csv",
-		Data:    inserted,
-	})
+	return nil
 }

@@ -18,6 +18,3 @@ type Gas struct {
 	Humidity    int       `json:"humidity" db:"humidity"`
 }
 
-type ImportPathRequest struct {
-	Path string `json:"path" validate:"required"`
-}
