@@ -17,4 +17,3 @@ type Gas struct {
 	Temp        int       `json:"temp" db:"temp"`
 	Humidity    int       `json:"humidity" db:"humidity"`
 }
-

@@ -18,8 +18,6 @@ import (
 
 var ErrInvalidFile = errors.New("invalid csv file")
 
-const dateLayout = "2006-01-02"
-
 var requiredColumns = []string{"date", "supplier", "part", "label", "author"}
 
 var textColumns = []string{"supplier", "part", "label", "author"}
@@ -91,7 +89,15 @@ func (g *GasUsecase) ImportCSV(ctx context.Context, src io.Reader) (int, error) 
 		columns[strings.ToLower(strings.TrimSpace(name))] = i
 	}
 
-	if missing := missingColumns(columns); len(missing) > 0 {
+	var missing []string
+
+	for _, name := range requiredColumns {
+		if _, ok := columns[name]; !ok {
+			missing = append(missing, name)
+		}
+	}
+
+	if len(missing) > 0 {
 		log.WithField("missing", missing).Error("csv is missing required columns")
 		return 0, fmt.Errorf("%w: missing required columns: %s", ErrInvalidFile, strings.Join(missing, ", "))
 	}
@@ -113,14 +119,58 @@ func (g *GasUsecase) ImportCSV(ctx context.Context, src io.Reader) (int, error) 
 			problems = append(problems, fmt.Sprintf("row %d: %v", line, err))
 			continue
 		}
+		field := func(name string) string {
+			i, ok := columns[name]
+			if !ok || i >= len(record) {
+				return ""
+			}
 
-		gas, err := parseGasRow(record, columns)
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("row %d: %v", line, err))
-			continue
+			return strings.TrimSpace(record[i])
 		}
 
-		batch = append(batch, gas)
+		date, err := time.Parse(time.RFC3339, field("date"))
+		if err != nil {
+			return 0, fmt.Errorf("column date: %q is not a date like 2026-01-15", field("date"))
+		}
+
+		for _, name := range textColumns {
+			if field(name) == "" {
+				return 0, fmt.Errorf("column %s: must not be empty", name)
+			}
+		}
+
+		numbers := make(map[string]int, len(intColumns))
+
+		for _, name := range intColumns {
+			raw := field(name)
+			if raw == "" {
+				continue
+			}
+
+			value, err := strconv.Atoi(raw)
+			if err != nil {
+				return 0, fmt.Errorf("column %s: %q is not a whole number", name, raw)
+			}
+
+			numbers[name] = value
+		}
+		var temp = domain.Gas{
+			ID:          uuid.New().String(),
+			Date:        date,
+			Supplier:    field("supplier"),
+			Part:        field("part"),
+			Label:       field("label"),
+			Author:      field("author"),
+			MQ137:       numbers["mq_137"],
+			MQ135:       numbers["mq_135"],
+			MQ6:         numbers["mq_6"],
+			Baseline137: numbers["baseline_137"],
+			Baseline135: numbers["baseline_135"],
+			Temp:        numbers["temp"],
+			Humidity:    numbers["humidity"],
+		}
+
+		batch = append(batch, temp)
 	}
 
 	if len(problems) > 0 {
@@ -140,70 +190,4 @@ func (g *GasUsecase) ImportCSV(ctx context.Context, src io.Reader) (int, error) 
 	log.WithField("inserted", len(batch)).Info("csv import finished")
 
 	return len(batch), nil
-}
-
-func missingColumns(columns map[string]int) []string {
-	var missing []string
-
-	for _, name := range requiredColumns {
-		if _, ok := columns[name]; !ok {
-			missing = append(missing, name)
-		}
-	}
-
-	return missing
-}
-
-func parseGasRow(record []string, columns map[string]int) (domain.Gas, error) {
-	field := func(name string) string {
-		i, ok := columns[name]
-		if !ok || i >= len(record) {
-			return ""
-		}
-
-		return strings.TrimSpace(record[i])
-	}
-
-	date, err := time.Parse(dateLayout, field("date"))
-	if err != nil {
-		return domain.Gas{}, fmt.Errorf("column date: %q is not a date like 2026-01-15", field("date"))
-	}
-
-	for _, name := range textColumns {
-		if field(name) == "" {
-			return domain.Gas{}, fmt.Errorf("column %s: must not be empty", name)
-		}
-	}
-
-	numbers := make(map[string]int, len(intColumns))
-
-	for _, name := range intColumns {
-		raw := field(name)
-		if raw == "" {
-			continue
-		}
-
-		value, err := strconv.Atoi(raw)
-		if err != nil {
-			return domain.Gas{}, fmt.Errorf("column %s: %q is not a whole number", name, raw)
-		}
-
-		numbers[name] = value
-	}
-
-	return domain.Gas{
-		ID:          uuid.New().String(),
-		Date:        date,
-		Supplier:    field("supplier"),
-		Part:        field("part"),
-		Label:       field("label"),
-		Author:      field("author"),
-		MQ137:       numbers["mq_137"],
-		MQ135:       numbers["mq_135"],
-		MQ6:         numbers["mq_6"],
-		Baseline137: numbers["baseline_137"],
-		Baseline135: numbers["baseline_135"],
-		Temp:        numbers["temp"],
-		Humidity:    numbers["humidity"],
-	}, nil
 }
