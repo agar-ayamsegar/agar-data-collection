@@ -142,4 +142,5 @@ func (g *GasHandler) GasImportUpload(c *echo.Context) error {
 		Message: "successfully create gas",
 		Data:    inserted,
 	})
+	return nil
 }
