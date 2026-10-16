@@ -42,19 +42,12 @@ func New(app *config.AppConfig) *DB {
 }
 
 func (d *DB) DSN() string {
-	var (
-		kind = d.app.Cfg.GetString("database.type")
-		user = d.app.Cfg.GetString("database.user")
-		pass = d.app.Cfg.GetString("database.pass")
-		host = d.app.Cfg.GetString("database.host")
-		name = d.app.Cfg.GetString("database.name")
+	return fmt.Sprintf(
+		"%s://%s:%s@%s/%s",
+		d.app.Cfg.GetString("database.type"),
+		d.app.Cfg.GetString("database.user"),
+		d.app.Cfg.GetString("database.pass"),
+		d.app.Cfg.GetString("database.host"),
+		d.app.Cfg.GetString("database.name"),
 	)
-
-	// A local MongoDB has no user or password, and "mongodb://:@host/db"
-	// is not a valid URI, so leave the credentials out entirely.
-	if user == "" {
-		return fmt.Sprintf("%s://%s/%s", kind, host, name)
-	}
-
-	return fmt.Sprintf("%s://%s:%s@%s/%s", kind, user, pass, host, name)
 }
