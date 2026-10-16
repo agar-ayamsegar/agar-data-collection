@@ -51,12 +51,11 @@ func (r *RestDelivery) Start() error {
 func (r *RestDelivery) RegisterRoutes() {
 	versionRoute := r.router.Group("/v1")
 
-	// health
 	healthRoute := versionRoute.Group("/health")
 	healthRoute.GET("/ping", r.healthHandler.PingGET)
 
-	// gas
 	gasRoute := versionRoute.Group("/gas")
 	gasRoute.POST("", r.gasHandler.GasSinglePOST)
+	gasRoute.POST("/upload", r.gasHandler.GasImportUpload)
 	gasRoute.GET("/:author", r.gasHandler.ListGasByAuthor)
 }

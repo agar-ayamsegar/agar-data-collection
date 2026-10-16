@@ -1,0 +1,6 @@
+date,supplier,part,mq_137,mq_135,mq_6,label,author,baseline_137,baseline_135,temp,humidity
+2026-01-15,Supplier A,breast,312,288,145,fresh,joren,100,95,28,65
+2026-01-15,Supplier A,thigh,340,301,158,fresh,joren,100,95,28,66
+2026-01-16,Supplier B,breast,512,488,245,stale,joren,102,97,29,70
+2026-01-16,Supplier B,wing,498,470,233,stale,joren,102,97,29,71
+2026-01-17,Supplier C,breast,355,,167,fresh,joren,99,94,27,
