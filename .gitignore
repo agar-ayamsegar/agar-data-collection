@@ -33,3 +33,6 @@ go.work.sum
 # .vscode/
 
 env/config.json
+
+# macOS
+.DS_Store
