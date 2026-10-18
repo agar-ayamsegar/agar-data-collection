@@ -5,29 +5,40 @@ const uint8_t PIN_MQ137 = A0;
 const uint8_t PIN_MQ135 = A1;
 
 const float VCC    = 5.0;
-const float RL_137 = 1.0;
-const float RL_135 = 2.0;
+const float RL_137 = 1.0; // ohm from resistor MQ_137
+const float RL_135 = 2.0; // ohm from resistor MQ_135
 
 const int WARMUP_SEC  = 600; // warm up harusnya 10 menit biar sensor panas, kalau pertamakali beli malah dibiarin 48jam (katanya)
-const int CAL_SAMPLES = 50;
+const int CAL_SAMPLES = 300; // rata-rata dari 300 sensor capture, tujuannya for wiggle sensor
 
 float rsAir137 = 0;
 float rsAir135 = 0;
 unsigned long startMs = 0;
 
+const float VREF   = 1.1;  // measurement length (because of analogReference(INTERNAL)) -> this from arduino
+
 float rawToRs(int raw, float rl) {
-  float v = raw * VCC / 1023;
+  float v = raw * VREF / 1023;
   if (v < 0.01) v = 0.01;
   return rl * (VCC - v) / v;
 }
 
 float readRs(uint8_t pin, float rl) {
-  return rawToRs(analogRead(pin), rl);
+  // get the rs from average raw
+  return rawToRs(readAvg(pin), rl);
+}
+
+int readAvg(uint8_t pin) { 
+  // get the average from raw 20seconds
+  long sum = 0;
+  for (int i = 0; i < 20; i++) { sum += analogRead(pin); delay(2); }
+  return sum / 20;
 }
 
 void calibrate() {
   Serial.println("# calibrating, keep box empty.");
   float sum137 = 0, sum135 = 0;
+  
   for (int i = 0; i < CAL_SAMPLES; i++) {
     sum137 += readRs(PIN_MQ137, RL_137);
     sum135 += readRs(PIN_MQ135, RL_135);
@@ -58,6 +69,9 @@ void warmUp() {
 
 void setup() {
   Serial.begin(115200);
+  analogReference(INTERNAL);
+  delay(50);                                                           // NEW
+  for (int i = 0; i < 20; i++) { analogRead(A0); analogRead(A1); }     // NEW
   warmUp();
   calibrate();
 }
@@ -65,8 +79,8 @@ void setup() {
 void loop() {
   if (Serial.available() && Serial.read() == 'c') calibrate();
 
-  int raw137 = analogRead(PIN_MQ137);
-  int raw135 = analogRead(PIN_MQ135);
+  int raw137 = readAvg(PIN_MQ137);
+  int raw135 = readAvg(PIN_MQ135);
   float rs137 = rawToRs(raw137, RL_137);
   float rs135 = rawToRs(raw135, RL_135);
 

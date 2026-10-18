@@ -4,22 +4,34 @@
 #   commands without an ID ("s baseline" ... "s sample") -> one measurement -> data/h1.json
 import json
 import re
+from datetime import datetime
 import sys
 from pathlib import Path
 
 INTERVAL_MS = 1000
-TIMESTAMP = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{3} -> ")
+TIMESTAMP = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{3} -> ")            # Arduino Serial Monitor "show timestamp"
+CLOCK = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})[ ,]")   # tools/serial_log.py file (,) or its console output ( )
 NO_ID = "0"
 
 
 def parse(path):
     measurements = {}  # id -> {"baseline": (mq137, mq135), "sample": (...)}, in log order
     last_t = {}
+    last_clock = None
     warnings = []
 
     for n, line in enumerate(path.read_text().splitlines(), 1):
         line = TIMESTAMP.sub("", line.strip())
-        if not line or line.startswith("#") or line.startswith("t_s,"):
+        clock = None
+        cm = CLOCK.match(line)
+        if cm:
+            clock, line = cm.group(1), line[cm.end():]
+        if line.startswith("# STOP") and clock and last_clock:
+            lost = (datetime.fromisoformat(clock) - datetime.fromisoformat(last_clock)).total_seconds()
+            if lost > 1.5 * INTERVAL_MS / 1000:
+                warnings.append(f"line {n}: {lost:.0f} s between the last row ({last_clock}) and STOP "
+                                "— rows missing at the end (copy truncated?)")
+        if not line or line.startswith("#") or line.startswith(("t_s,", "clock,")):
             continue
         f = line.split(",")
         if len(f) != 7 or f[2] not in ("baseline", "sample"):
@@ -35,7 +47,7 @@ def parse(path):
             warnings.append(f"line {n}: skipped, raw out of 0-1023: {line!r}")
             continue
 
-        m = measurements.setdefault(cid, {"baseline": ([], []), "sample": ([], [])})
+        m = measurements.setdefault(cid, {"baseline": ([], []), "sample": ([], []), "date": clock or ""})
         if phase == "baseline" and m["sample"][0]:
             who = "" if cid == NO_ID else f" for {cid}"
             sys.exit(f"line {n}: baseline{who} after its sample — measured twice? "
@@ -48,6 +60,7 @@ def parse(path):
             warnings.append(f"line {n}: {cid} {phase} jumps t_s {prev} -> {t} — rows missing?")
         last_t[(cid, phase)] = t
 
+        last_clock = clock or last_clock
         m[phase][0].append(r137)
         m[phase][1].append(r135)
 
@@ -57,7 +70,7 @@ def parse(path):
 def to_json(cid, m):
     (b137, b135), (s137, s135) = m["baseline"], m["sample"]
     out = json.dumps({
-        "date": "",
+        "date": m.get("date", ""),
         "chicken_id": "" if cid == NO_ID else cid,
         "supplier": "",
         "part": "WHOLE",
