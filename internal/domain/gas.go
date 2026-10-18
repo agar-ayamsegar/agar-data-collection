@@ -21,4 +21,5 @@ type Gas struct {
 	MQ6           []float64 `json:"mq_6" db:"mq_6"`
 	Temp          []float64 `json:"temp" db:"temp"`
 	Humidity      []float64 `json:"humidity" db:"humidity"`
+	Notes         []string  `json:"notes" db:"notes"`
 }

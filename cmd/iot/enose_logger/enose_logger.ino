@@ -1,4 +1,4 @@
-// MQ-137: AO -> A0 | MQ-135: AO -> A1 | VCC -> 5V, GND -> GND
+// MQ-137: AO -> A0 | MQ-135: AO -> A1 | VCC -> 5V, GND -> GND | VREF -> 1.1
 
 const uint8_t PIN_MQ137 = A0;
 const uint8_t PIN_MQ135 = A1;
@@ -6,8 +6,9 @@ const uint8_t PIN_MQ135 = A1;
 const float VCC   = 5.0;
 const int   N_AVG = 20;
 const unsigned long INTERVAL_MS = 1000;
+const float VREF = 1.1; // for measurement
 
-bool logging = false;
+bool logging = true;
 String phase = "none";
 String id = "0";
 unsigned long startMs = 0, lastMs = 0;
@@ -51,15 +52,16 @@ void printRow() {
   Serial.print(',');
   Serial.print(raw137);
   Serial.print(',');
-  Serial.print(raw137 * VCC / 1023, 3);
+  Serial.print(raw137 * VREF / 1023, 3);
   Serial.print(',');
   Serial.print(raw135);
   Serial.print(',');
-  Serial.println(raw135 * VCC / 1023, 3);
+  Serial.println(raw135 * VREF / 1023, 3);
 }
 
 void setup() {
   Serial.begin(115200);
+  analogReference(INTERNAL);
   Serial.println("# READY");
   Serial.println("t_s,sample_id,label,raw137,v137,raw135,v135");
 }
