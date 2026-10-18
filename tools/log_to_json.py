@@ -4,13 +4,15 @@
 #   commands without an ID ("s baseline" ... "s sample") -> one measurement -> data/h1.json
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import sys
 from pathlib import Path
 
 INTERVAL_MS = 1000
+TZ = timezone(timedelta(hours=7))                                   # WIB, where the data is collected
 TIMESTAMP = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{3} -> ")            # Arduino Serial Monitor "show timestamp"
 CLOCK = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})[ ,]")   # tools/serial_log.py file (,) or its console output ( )
+MARKER = re.compile(r"^(?:>> marker saved: |m )(.+)$")              # the "m <note>" command and its enose_logger echo
 NO_ID = "0"
 
 
@@ -19,6 +21,8 @@ def parse(path):
     last_t = {}
     last_clock = None
     warnings = []
+    cur_cid = None
+    pending_notes = []   # markers seen before the first row of a measurement
 
     for n, line in enumerate(path.read_text().splitlines(), 1):
         line = TIMESTAMP.sub("", line.strip())
@@ -31,6 +35,13 @@ def parse(path):
             if lost > 1.5 * INTERVAL_MS / 1000:
                 warnings.append(f"line {n}: {lost:.0f} s between the last row ({last_clock}) and STOP "
                                 "— rows missing at the end (copy truncated?)")
+        mk = MARKER.match(line)
+        if mk:
+            notes = measurements[cur_cid]["notes"] if cur_cid else pending_notes
+            note = mk.group(1).strip()
+            if not notes or notes[-1] != note:   # the command and its echo are the same note
+                notes.append(note)
+            continue
         if not line or line.startswith("#") or line.startswith(("t_s,", "clock,")):
             continue
         f = line.split(",")
@@ -47,7 +58,11 @@ def parse(path):
             warnings.append(f"line {n}: skipped, raw out of 0-1023: {line!r}")
             continue
 
-        m = measurements.setdefault(cid, {"baseline": ([], []), "sample": ([], []), "date": clock or ""})
+        m = measurements.setdefault(cid, {"baseline": ([], []), "sample": ([], []), "date": clock or "", "notes": []})
+        if cid != cur_cid:
+            cur_cid = cid
+            m["notes"].extend(pending_notes)
+            pending_notes.clear()
         if phase == "baseline" and m["sample"][0]:
             who = "" if cid == NO_ID else f" for {cid}"
             sys.exit(f"line {n}: baseline{who} after its sample — measured twice? "
@@ -67,10 +82,17 @@ def parse(path):
     return measurements, warnings
 
 
+def rfc3339(clock):
+    # "2026-10-18 13:40:03" (local, from tools/serial_log.py) -> "2026-10-18T13:40:03+07:00"
+    if not clock:
+        return ""
+    return datetime.fromisoformat(clock).astimezone(TZ).isoformat()
+
+
 def to_json(cid, m):
     (b137, b135), (s137, s135) = m["baseline"], m["sample"]
     out = json.dumps({
-        "date": m.get("date", ""),
+        "date": rfc3339(m.get("date", "")),
         "chicken_id": "" if cid == NO_ID else cid,
         "supplier": "",
         "part": "WHOLE",
@@ -86,6 +108,7 @@ def to_json(cid, m):
         "mq_135": s135,
         "temp": None,
         "humidity": None,
+        "notes": m.get("notes", []),
     }, indent=2)
     return re.sub(r"\[[\d,\s]+\]", lambda a: re.sub(r"\s+", "", a.group()), out) + "\n"
 
