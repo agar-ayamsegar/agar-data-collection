@@ -1,4 +1,7 @@
-// MQ-137: AO -> A0 | MQ-135: AO -> A1 | VCC -> 5V, GND -> GND | VREF -> 1.1
+#include <DHT11.h>
+
+
+// MQ-137: AO -> A0 | MQ-135: AO -> A1 | VCC -> 5V, GND -> GND | VREF -> 1.1 | DHT11 -> Digital 3
 
 const uint8_t PIN_MQ137 = A0;
 const uint8_t PIN_MQ135 = A1;
@@ -12,6 +15,11 @@ bool logging = true;
 String phase = "none";
 String id = "0";
 unsigned long startMs = 0, lastMs = 0;
+
+// temp and humi
+DHT11 dht11(3); // pin number 3
+int temperature = 0;
+int humidity = 0;
 
 int readAvg(uint8_t pin) {
   long sum = 0;
@@ -56,19 +64,35 @@ void printRow() {
   Serial.print(',');
   Serial.print(raw135);
   Serial.print(',');
-  Serial.println(raw135 * VREF / 1023, 3);
+  Serial.print(raw135 * VREF / 1023, 3);
+  Serial.print(',');
+  
+  char buf[20];
+  sprintf(buf, "%d C, %d %%", temperature, humidity);
+  Serial.println(buf);
 }
 
 void setup() {
   Serial.begin(115200);
   analogReference(INTERNAL);
   Serial.println("# READY");
-  Serial.println("t_s,sample_id,label,raw137,v137,raw135,v135");
+  Serial.println("t_s,sample_id,label,raw137,v137,raw135,v135,temp,humidity");
 }
 
 void loop() {
   handleSerial();
   if (!logging || millis() - lastMs < INTERVAL_MS) return;
+  readTempAndHum();
   lastMs = millis();
   printRow();
+}
+
+
+void readTempAndHum() {
+  // DHT11
+  int result = dht11.readTemperatureHumidity(temperature, humidity);
+  if (result != 0) {
+      // Print error message based on the error code.
+      Serial.println(DHT11::getErrorString(result));
+  }
 }
