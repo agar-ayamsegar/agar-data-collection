@@ -7,7 +7,7 @@ type Gas struct {
 	Date          time.Time `json:"date" db:"date" validate:"required"`
 	Supplier      string    `json:"supplier" db:"supplier" validate:"required"`
 	ChickenID     string    `json:"chicken_id" db:"chicken_id" validate:"required"`
-	Label         string    `json:"label" db:"label" validate:"required,oneof=FRESH UNFRESH"`
+	Label         string    `json:"label" db:"label" validate:"required,oneof=FRESH UNFRESH UNKNOWN"`
 	Author        string    `json:"author" db:"author" validate:"required"`
 	WeightG       float64   `json:"weight_g" db:"weight_g" validate:"required"`
 	HoursSinceBuy float64   `json:"hours_since_buy" db:"hours_since_buy" validate:"required"`
@@ -22,4 +22,5 @@ type Gas struct {
 	Temp          []float64 `json:"temp" db:"temp"`
 	Humidity      []float64 `json:"humidity" db:"humidity"`
 	Notes         []string  `json:"notes" db:"notes"`
+	TasteNotes    string    `json:"taste_notes" db:"taste_notes"`
 }
