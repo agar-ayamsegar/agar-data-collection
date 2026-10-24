@@ -39,3 +39,5 @@ env/config.json
 
 
 data/
+
+tools/eda_*

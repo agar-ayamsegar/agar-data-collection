@@ -7,4 +7,7 @@ build-local:
 push: build
 	docker push beebeewijaya/agar-data-collection
 
-PHONY: build build-local push
+serial-log:
+	caffeinate -i python3 tools/serial_log.py $(NAME)
+
+PHONY: build build-local push serial-log
