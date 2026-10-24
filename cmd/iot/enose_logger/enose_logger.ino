@@ -9,7 +9,7 @@ const uint8_t PIN_MQ135 = A1;
 const float VCC   = 5.0;
 const int   N_AVG = 20;
 const unsigned long INTERVAL_MS = 1000;
-const float VREF = 1.1; // for measurement
+const float VREF = 5; // for measurement
 
 bool logging = true;
 String phase = "none";
@@ -74,7 +74,7 @@ void printRow() {
 
 void setup() {
   Serial.begin(115200);
-  analogReference(INTERNAL);
+  analogReference(DEFAULT);
   Serial.println("# READY");
   Serial.println("t_s,sample_id,label,raw137,v137,raw135,v135,temp,humidity");
 }
