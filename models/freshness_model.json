@@ -1,0 +1,55 @@
+{
+  "name": "chicken-freshness-logreg",
+  "version": "1.0",
+  "created": "2026-10-27",
+  "output": {
+    "0": "segar",
+    "1": "tidak segar"
+  },
+  "features": [
+    "rel_135",
+    "rel_137"
+  ],
+  "scaler_mean": [
+    0.5098714884469172,
+    0.6581832595748461
+  ],
+  "scaler_scale": [
+    0.2870141870963004,
+    0.19896999855528152
+  ],
+  "coef": [
+    -2.34607662135736,
+    0.051083979317173414
+  ],
+  "intercept": -0.30252942199843247,
+  "threshold": 0.5,
+  "how_to_predict": "z = (x - scaler_mean) / scaler_scale; p = 1 / (1 + exp(-(intercept + sum(coef * z)))); tidak segar if p >= threshold",
+  "rel_computation": {
+    "rl_kohm": {
+      "137": 1.0,
+      "135": 2.0
+    },
+    "vcc": 5.0,
+    "volt": "V = raw * vref / 1023   (vref of the device, 5.0 V)",
+    "rs": "Rs = RL * (VCC - V) / V   (V clipped at >= 0.01)",
+    "rs_air": "median Rs of the baseline (empty box, lid closed): skip its last 10 s, then take the 60 s before",
+    "rs_sample": "median Rs of the last 60 s of the sample (chicken in, lid closed)",
+    "rel": "rel = rs_sample / rs_air, per sensor",
+    "min_points": 5,
+    "invalid_if": "fewer than min_points readings in a window, or any raw >= 1023 in the sample window"
+  },
+  "trained_on": {
+    "measurements": 69,
+    "chickens": 17,
+    "tidak_segar": 33,
+    "segar": 36
+  },
+  "expected_performance_leave_one_chicken_out": {
+    "recall": 0.909,
+    "specificity": 0.861,
+    "precision": 0.857,
+    "f1": 0.882,
+    "AUC": 0.925
+  }
+}
