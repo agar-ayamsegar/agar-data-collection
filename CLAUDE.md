@@ -12,18 +12,18 @@ Project-wide context is in `../AGENTS.md` (rules, product, routine) and `../MEMO
 with `python3 tools/eda_report.py` → `eda/index.html` after each new chicken
 (`--json` for raw numbers, `--demo` for the self-check). Stdlib only, no pandas needed.
 
-## Where the data stands (2026-10-24)
+## Where the data stands (2026-10-25)
 
 | | |
 |---|---|
-| Analysed (proper EDA) | **A01–A06** only. `eda/FINDINGS.md` and `eda/index.html` stop here |
-| JSON made | **A03–A14 all converted**: `cmd/iot/data/a03/A03_h1.json` … `a14/A14_h7.json` (55 checkpoints, `smell_level`/`texture`/`color` filled). `a15/` exists but is empty. |
-| Quick check on A03–A14 | `../MEMORY.md`, "Update 2026-10-24": MQ-135 `rel300` LOCO 89 % vs label, 93 % vs smell ≥ 4, cut ≈ 0.305. Consistent with the 6-chicken EDA |
+| Analysed (proper EDA) | **A01–A17**, 69 checkpoints (64 at VREF 5.0). `eda/FINDINGS.md` §0 and `eda/index.html` are current |
+| JSON made | A01–A17 all converted, `cmd/iot/data/a01/…` … `a17/A17_h2.json` |
+| Headline | `relmin_135 < 0.355` — **83 % recall**, 88 % LOCO accuracy vs smell ≥ 4. Three-band verdict with ULANGI SCAN reaches 100 % recall / 100 % NPV on the 75 % of scans it decides |
 | Stray file | `data/A10_A10_20261023_192013.json` (doubled name, mostly empty), superseded by `cmd/iot/data/a10/` |
 
-The thresholds quoted below are still the 6-chicken EDA numbers. Re-run `tools/eda_report.py`
-on A01–A14 before quoting a final accuracy. **A09–A14 JSONs start at `hours_since_buy: 2`** (no h1),
-which matters for the MQ-137-relative-to-h1 feature.
+Re-run `python3 tools/eda_report.py` after every new chicken; every number below comes out of
+it. **A09–A17 JSONs start at `hours_since_buy: 2`** (no h1), which matters for the
+MQ-137-relative-to-h1 feature.
 
 - **Chickens now run in parallel**, several per day: A07+A08 (22 Oct), A09+A10 (23 Oct),
   **A11+A12+A13+A14 (24 Oct)** with `h1` staggered 09:45 / 10:15 / 10:45 / 11:10. That is
@@ -40,8 +40,33 @@ which matters for the MQ-137-relative-to-h1 feature.
 | File | What |
 |---|---|
 | `../design/agar-sniffer-3d.html` | 3D handheld sniffer concept (three.js; open in a browser). Funnel Ø7 cm on 1 cm legs → ~150 ml chamber (MQ-137, MQ-135, DHT) → fan **after** the sensors. Steps: reference → sniff → clear. Parts, power (~2–2.5 W, 2×18650 ≈ 7–9 h), and the data rule: `"method": "funnel"`, collect box + funnel pairs. Published copy: https://claude.ai/artifact/Afs9d3kDW67VMS1TYdjHYG |
+| `../design/box-airflow-3d.html` | Sensor-box v2 study, 3D airflow sim of 5 layouts. Recommended **D: hold → mix → flush**: rack 2–3 cm + drip tray, stir fan (top corner, sensors on side wall in its return path), exhaust fan on a high outlet, carbon-filter inlet low on the far side. Fan state must match in baseline and sample; new box = new `method` tag. Published: https://claude.ai/artifact/716iyLkVrF3AX5V58k3wGw |
 | `../design/lakban_setup.png` / `.svg` | Cable/Arduino taping: lakban outside the box only, with a slack loop. No tape inside the box or on the sensors (glue VOCs raise the MQ-135) |
 | iPad app canvas "Lalalla" | https://claude.ai/artifact/CiYDYzYrE4sAR5LQ5RKnLn. Owner dashboard, batch detail, 8 live scan screens + clickable prototype. Scan output is **BAGUS / RUSAK** only, plus grey **ULANGI SCAN** for invalid readings |
+
+## Hardware: sensor box v2 (`hardware/box_v2/`)
+
+Parametric OpenSCAD model of all seven box layouts from the airflow study, with printable
+parts. Start with `hardware/box_v2/README.md`.
+
+- `box_v2.scad`: set `design` (NOW, A–F) and `part`. All sizes are in mm at the top of the
+  file. The default box is **400 × 300 × 300 mm inside (~36 L)**: rack 30 mm, V-hood mouth
+  168 mm high, throat 56 mm square at 238 mm, side-wall sensors at 165 mm.
+- `stl/`: printable parts:
+  - `throat_collar` (F) / `throat_collar_E`,
+  - `sensor_wall_mount`,
+  - `rack_foot` ×4,
+  - `filter_port`,
+  - `tube_port`,
+  - `fan_mount_40`.
+- `hood_net.svg`: 1:1 cutting template for the V-hood panels.
+- `render/`: a PNG per layout and per main part.
+- `airflow-sim.html`: the interactive 3D airflow simulation (same letters).
+- **Build D first** (hold → mix → flush, closest to the existing data), **then F** (V-hood
+  chimney, fan on top after the sensors, best signal).
+- Any new box is a new dataset version: put `method: box_v2_<letter>` in `notes`, keep fans
+  identical in baseline and sample, and run the first chickens in old and new box together.
+- Regenerate: `openscad -o stl/<part>.stl -D 'part="<part>"' box_v2.scad` (see the README for renders).
 
 ## Working with the user
 
@@ -115,8 +140,12 @@ that makes the MQ-137 usable (`eda/FINDINGS.md` §3).
    a gap and they track smell as well as the clean ones (`eda/FINDINGS.md` §5).
 6. Take the chicken out of its container, **1 min on a tray in open air** (no fanning, never
    open the container next to the box). Put it in and close the lid within 5 s.
-7. After **5 min**, `x`. (Was 2 min. `rel` at 300 s is 96 % held-out vs 88 % for 120 s —
-   three extra minutes, +8 points, no extra work. See `eda/FINDINGS.md` §2.)
+7. After **8 min**, `x`. (Was 5 min, before that 2. A15 h4, A17 h2, A11 h7 and A14 h7 were
+   all still gassing at 300 s, so the 5-min snapshot called them fresh. The feature is now
+   `relmin` — the lowest `rel` *anywhere* in the run — so a longer run can only help.
+   See `eda/FINDINGS.md` §0b.)
+   - **Do not let a gap open before `s sample`.** A16 h2 lost its entire response peak to a
+     10-min gap and is unusable. A short gap is fine (§5); ten minutes is not.
 8. **Smell (never taste raw chicken)** and record `smell_level`, `texture` and `color`.
    Use gloves once the chicken is off.
 9. Stop the chicken after the checkpoint where smell is 4–5 or the texture is slimy/mushy.
@@ -133,15 +162,37 @@ rel = Rs_sample / Rs_baseline      # 1.0 = empty box; LOWER = MORE GAS
 ```
 
 - Baseline value: the median of the last ~20 **flat** baseline rows. Drop lid/hand spikes.
-- Main feature: `rel` at **300 s after `s sample`** on the **MQ-135** (threshold `< 0.285`,
-  96 % leave-one-chicken-out against smell ≥ 4). Extras: `rel` at 120 s and the minimum
-  `rel`, for both sensors.
-- **Combining the sensors:** an `AND`/`OR` rule on the two raw `rel` values buys nothing
-  (96 %, same as MQ-135 alone). What works is the **ratio** `rel300_137 / rel300_135`,
-  which fires **high**: `> 2.01` is also 96 % held-out, needs no h1 reference, and is less
-  humidity-tangled (r +0.70 vs −0.80). Its errors differ from MQ-135's, so run both rules:
-  **agree → call it (21/21 correct); disagree → ULANGI SCAN** (2 of 23 runs).
-  See `eda/FINDINGS.md` §2b.
+- Main feature: **`relmin_135`** — the *lowest* `rel` anywhere in the run, on the MQ-135
+  (threshold `< 0.355`). **83 % recall** leave-one-chicken-out against smell ≥ 4.
+  Use the minimum, not a fixed snapshot: several chickens were still gassing at 300 s and
+  `rel300_135` missed them (A15 h4, A17 h2, A11 h7, A14 h7). Extras: `rel` at 120 s and
+  300 s, for both sensors.
+- **Judge a rule by recall, not accuracy.** The data is 45 fresh vs 23 spoiled, so a rule
+  that leans "fresh" scores well on accuracy and still lets rotten chicken through. The old
+  `rel300_135` rule is 85 % accurate but only **62 % recall** — one spoiled chicken in three
+  called fresh. The number that matters to whoever eats it is **NPV**: of everything the
+  device calls BAGUS, how much really was. `tools/eda_report.py` now sorts by recall and prints the confusion
+  matrix. See `eda/FINDINGS.md` §0a.
+- **Turning the number into a verdict: three bands, not one cut.** A single threshold
+  forces a choice between letting rotten chicken through and rejecting good chicken —
+  buying 100 % recall from one cut costs 36 % of the good chickens. Use the grey
+  **ULANGI SCAN** band the iPad app already has:
+
+  | `relmin_135` | Verdict |
+  |---|---|
+  | `< 0.355` | **RUSAK** |
+  | `0.355 – 0.538` | **ULANGI SCAN** |
+  | `> 0.538` | **BAGUS** |
+
+  Decides 48/64 scans, **0 rotten called BAGUS**, 100 % recall / 100 % NPV / 86 % precision
+  and 94 % accuracy on the ones it calls. ⚠ The edges are fitted on all 64 runs, so confirm
+  on the next 2–3 chickens. See `eda/FINDINGS.md` §0c.
+- **A bigger model does not help.** Logistic regression LOCO: 1 feature 89.7 %, 4 features
+  88.2 %, 4 + humidity 88.9 %. More features made it *worse*. The ceiling is the labels and
+  the collection protocol, not the algorithm — settle the humidity confound first
+  (`eda/FINDINGS.md` §0d). The ratio `rel300_137 / rel300_135` still works as a second
+  opinion (`> 1.825`, 93 % precision but only 62 % recall), so use it to *confirm* a
+  RUSAK call, never to overturn one.
 - **MQ-137 is a relative sensor, not an absolute one.** It responds as hard as the MQ-135
   (min `rel` 0.14 vs 0.13), but 0.65 means a different thing on each chicken. Judge it
   against that chicken's own h1 reading. Pooled it is only 69 % held-out; rescaled by h1
@@ -159,8 +210,9 @@ rel = Rs_sample / Rs_baseline      # 1.0 = empty box; LOWER = MORE GAS
   - smell 1 (tawar) ≈ 0.60–1.08 (median 0.87),
   - smell 2–3 (asin/apek/kecut) ≈ 0.35–0.93,
   - smell 4–5 (pesing/rotten) ≈ 0.13–0.40.
-  - The 2-min bands overlap. At **5 min** they do not: `rel300_135 < 0.285` splits
-    smell ≥ 4 from the rest at 96 % held-out.
+  - The 2-min bands overlap badly. Use `relmin_135` instead of any fixed snapshot:
+    `< 0.355` splits smell ≥ 4 from the rest at **86 % recall** / 89 % held-out accuracy,
+    and the three-band rule above removes the remaining false negatives.
 
 ## Reading a log: diagnosis
 

@@ -1,0 +1,707 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Agar Box Airflow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a lab bench — one big 3D test box with a readout rail beside it, then the design sheets below. */
+:root{
+  --bg:#edf0ec; --panel:#f8faf7; --fg:#17211d; --muted:#55625c; --line:#c8d0ca;
+  --accent:#0d6b61; --accent-fg:#ffffff; --accent-soft:#d5e8e3;
+  --nh3:#1d86b0; --voc:#b86c12; --air:#7f978e; --chicken:#e2a983; --sensor:#c0392b;
+  --scene:#e3e9e4; --edge:#5c6d66; --good:#1e7438; --warn:#9a5a00;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1412; --panel:#151d1a; --fg:#e2eae6; --muted:#9aa9a2; --line:#2a3631;
+  --accent:#3dbcab; --accent-fg:#06201c; --accent-soft:#163a34;
+  --nh3:#4fc4ec; --voc:#f0a24a; --air:#5d776e; --chicken:#c98f6c; --sensor:#ff6a5c;
+  --scene:#111916; --edge:#8ea29a; --good:#5cc27e; --warn:#e2a64c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1412; --panel:#151d1a; --fg:#e2eae6; --muted:#9aa9a2; --line:#2a3631;
+  --accent:#3dbcab; --accent-fg:#06201c; --accent-soft:#163a34;
+  --nh3:#4fc4ec; --voc:#f0a24a; --air:#5d776e; --chicken:#c98f6c; --sensor:#ff6a5c;
+  --scene:#111916; --edge:#8ea29a; --good:#5cc27e; --warn:#e2a64c; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:clamp(20px,2.6vw,26px);font-weight:800}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lead{max-width:68ch;color:var(--muted);font-size:16px}
+header{display:flex;flex-direction:column;gap:10px}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* bench */
+.bench{display:flex;flex-direction:column;gap:12px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:0;min-height:44px;text-align:left}
+.tab b{font-family:var(--f-display);font-weight:600;font-size:14px}
+.tab span{font-size:12px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.tab[aria-selected="true"] span{color:var(--accent-fg);opacity:.85}
+.rec{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-left:6px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px}
+@media (max-width:860px){.stage{grid-template-columns:minmax(0,1fr)}}
+#view{position:relative;height:clamp(340px,62vh,600px);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--scene);touch-action:none}
+#view canvas{display:block;width:100%;height:100%}
+#labels{position:absolute;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-120%);font-family:var(--f-mono);font-size:11px;white-space:nowrap;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+.lbl.hot{border-color:var(--sensor);color:var(--sensor)}
+.hint{position:absolute;left:10px;bottom:8px;font-family:var(--f-mono);font-size:11px;color:var(--muted);pointer-events:none}
+.legend{position:absolute;right:10px;top:8px;display:flex;flex-direction:column;gap:2px;font-family:var(--f-mono);font-size:11px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.err{padding:20px;color:var(--warn)}
+@media (max-width:600px){.legend{top:auto;bottom:8px;font-size:10px;padding:4px 6px}.hint{display:none}}
+
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.phases{display:flex;flex-wrap:wrap;gap:6px}
+.ph{border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:999px;padding:6px 12px;min-height:40px;font-size:13px;font-weight:500}
+.ph[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.explain{font-size:13.5px;color:var(--fg);min-height:4.6em}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{border-top:1px solid var(--line);padding-top:6px}
+.stat .k{font-size:11px;color:var(--muted)}
+.stat .v{font-family:var(--f-mono);font-size:18px;font-variant-numeric:tabular-nums}
+#chart{width:100%;height:120px;display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:6px;padding:6px 10px;min-height:36px;font-size:13px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.small{font-size:12px;color:var(--muted)}
+
+/* facts */
+.facts{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:820px){.facts{grid-template-columns:minmax(0,1fr)}}
+.facts .txt{display:flex;flex-direction:column;gap:12px;max-width:62ch}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:12px;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.up{color:var(--nh3);font-weight:600}.down{color:var(--voc);font-weight:600}
+
+/* designs */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.pick{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.card dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;margin:0;font-size:13.5px}
+.card dt{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.card dd{margin:0}
+.pc{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;font-size:13.5px}
+.pro::before{content:"+ ";color:var(--good);font-weight:700}
+.con::before{content:"− ";color:var(--warn);font-weight:700}
+.verdict{font-size:13px;border-top:1px solid var(--line);padding-top:8px;color:var(--muted)}
+.card .open{align-self:flex-start}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.rule{border-left:3px solid var(--accent);padding:2px 0 2px 12px;font-size:14px}
+.rule b{display:block;font-family:var(--f-display);font-weight:600;margin-bottom:2px}
+.build{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+@media (max-width:820px){.build{grid-template-columns:minmax(0,1fr)}}
+footer{font-size:12px;color:var(--muted);max-width:80ch}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Agar · sensor box v2 · airflow study</p>
+  <h1>Where the fan and sensors should go</h1>
+  <p class="lead">Seven ways to build the test box, from the box you have now to a box that holds the smell, mixes it, reads it and flushes itself. Pick a design, switch phases, and watch what the sensor sees. Blue dots are ammonia (lighter than air), orange dots are the heavier spoilage gases.</p>
+</header>
+
+<section class="bench" aria-label="3D airflow simulation">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="stage">
+    <div id="view">
+      <div id="labels"></div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="dot" style="background:var(--nh3)"></i>ammonia, rises</span>
+        <span><i class="dot" style="background:var(--voc)"></i>amines, H₂S, acids, sink</span>
+        <span><i class="dot" style="background:var(--air)"></i>air movement</span>
+        <span><i class="dot" style="background:var(--sensor)"></i>sensor</span>
+      </div>
+      <div class="hint">Drag to rotate · scroll or pinch to zoom</div>
+    </div>
+    <aside class="rail" aria-live="polite">
+      <div>
+        <p class="eyebrow" id="dname">Design</p>
+        <h3 id="dtitle">—</h3>
+      </div>
+      <div class="phases" id="phases" role="group" aria-label="Phase"></div>
+      <p class="explain" id="explain"></p>
+      <div class="stats">
+        <div class="stat"><div class="k">At sensor</div><div class="v" id="sSensor">0</div></div>
+        <div class="stat"><div class="k">In box</div><div class="v" id="sBox">0</div></div>
+        <div class="stat"><div class="k" id="sThirdK">Trapped</div><div class="v" id="sThird">0</div></div>
+      </div>
+      <div>
+        <p class="small">What the sensor sees, last 40 s of simulated time</p>
+        <canvas id="chart" aria-label="Sensor signal over time"></canvas>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="play" aria-pressed="false">Pause</button>
+        <button class="btn" id="reset">Restart this design</button>
+        <button class="btn" id="tglLabels" aria-pressed="true">Labels</button>
+        <button class="btn" id="tglAir" aria-pressed="true">Air</button>
+      </div>
+      <p class="small">Simulated time runs about 20× faster than real minutes. Dot counts are relative: compare designs by shape, not by the number.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="facts">
+  <div class="txt">
+    <p class="eyebrow">Before placing the fan</p>
+    <h2>Ammonia rises. The smell that stays low is the gas under the chicken.</h2>
+    <p>Ammonia weighs 17 g/mol against 29 for air, so in still air it drifts up. Most of the other spoilage gases (amines, hydrogen sulfide, the acids behind “asem”) are heavier and settle slowly. At the tiny amounts a chicken gives off, warm air and the MQ heaters mix things more than weight does, but in a still box it takes minutes.</p>
+    <p>What really stays at the bottom is the part of the chicken that touches the floor. No air reaches that skin, and the drip that pools there holds a lot of ammonia, because ammonia dissolves easily in water. That gas leaks out slowly and unevenly, so two runs of the same chicken can read differently depending on how it was lying.</p>
+    <p><b>The fix is a rack before any fan:</b> a stainless grid 2–3 cm above the floor, with a washable drip tray under it. Then air reaches the underside, and a gentle fan can carry that gas to the sensor.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Gas</th><th>g/mol</th><th>In still air</th><th>Seen by</th></tr></thead>
+      <tbody>
+        <tr><td>Air (reference)</td><td class="num">29</td><td>—</td><td>—</td></tr>
+        <tr><td>Ammonia NH₃ · “pesing”</td><td class="num">17</td><td class="up">rises</td><td>MQ-137, MQ-135</td></tr>
+        <tr><td>Hydrogen sulfide H₂S · rotten egg</td><td class="num">34</td><td class="down">sinks a little</td><td>MQ-135</td></tr>
+        <tr><td>CO₂ (bacteria breathing)</td><td class="num">44</td><td class="down">sinks</td><td>MQ-135</td></tr>
+        <tr><td>Ethanol · “glue/solvent”</td><td class="num">46</td><td class="down">sinks</td><td>MQ-135</td></tr>
+        <tr><td>Trimethylamine · fishy, amis</td><td class="num">59</td><td class="down">sinks</td><td>MQ-137, MQ-135</td></tr>
+        <tr><td>Acetic acid · “asem”</td><td class="num">60</td><td class="down">sinks</td><td>MQ-135</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="bench" aria-label="Design comparison">
+  <div>
+    <p class="eyebrow">The seven designs</p>
+    <h2>Fan, sensor and box, side by side</h2>
+  </div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section class="bench" aria-label="Rules">
+  <div>
+    <p class="eyebrow">Whatever you build</p>
+    <h2>Rules that keep the ratio honest</h2>
+  </div>
+  <div class="rules">
+    <p class="rule"><b>Same fan state in baseline and sample</b>Moving air cools the MQ heater and changes the reading by itself. If the fan runs during the sample, it runs the same way, at the same speed, during the baseline.</p>
+    <p class="rule"><b>Never blow straight at the sensors</b>Put them in the return path of the loop, where mixed air passes at a gentle, steady speed.</p>
+    <p class="rule"><b>In a tube, the fan goes after the sensors</b>The air reaches the sensors before it touches the motor, which is warm and can carry its own smell.</p>
+    <p class="rule"><b>Purge through a carbon filter</b>Then every baseline starts from the same clean air, whatever the room smells like. Carbon doesn't remove humidity, so keep logging the DHT11.</p>
+    <p class="rule"><b>New box = new dataset version</b>Tag the JSON with <code>"method": "box_v2_D"</code> (or similar) and run the first few chickens in both boxes, so old and new ratios can be compared.</p>
+    <p class="rule"><b>Chicken in the same spot, every time</b>Centre of the rack, same side up. Mark the spot on the grid.</p>
+  </div>
+</section>
+
+<section class="build" aria-label="Recommended build">
+  <div class="txt" style="display:flex;flex-direction:column;gap:12px">
+    <p class="eyebrow">Recommended for data collection now</p>
+    <h2>Design D: hold, mix, flush</h2>
+    <p>It keeps the strong signal of your current closed-box method (the 5-minute hold), adds a short mix so the sensor reads the average air instead of whatever drifted past, and flushes itself with filtered air so you never have to open the lid to purge. Later, the through-flow design (C) is the one that matches the handheld sniffer; run a few chickens in both to learn how the two relate.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Step</th><th>Fans</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>Flush (empty box)</td><td>exhaust on, filter inlet open</td><td class="num">2 min</td></tr>
+        <tr><td>Baseline (empty, closed)</td><td>off, then stir 20 s</td><td class="num">5 min</td></tr>
+        <tr><td>Chicken in on the rack, hold</td><td>all off</td><td class="num">5 min</td></tr>
+        <tr><td>Mix, then read</td><td>stir fan on, low speed</td><td class="num">20–30 s</td></tr>
+        <tr><td>Chicken out, flush</td><td>exhaust on</td><td class="num">2 min</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Part</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Stainless rack + drip tray</td><td>2–3 cm high, washable</td></tr>
+        <tr><td>Stir fan, 40 mm 5 V</td><td>inside, top corner, low speed</td></tr>
+        <tr><td>Exhaust fan, 40 mm 5 V</td><td>on the outlet, top right, outside the box</td></tr>
+        <tr><td>Inlet with carbon filter</td><td>bottom left, opposite the outlet; cap it during the hold</td></tr>
+        <tr><td>2 × logic MOSFET + diode</td><td>so the Arduino switches each fan (IRLZ44N or similar)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>This is a qualitative particle simulation to compare layouts: gas dots drift, rise or sink and follow a simple air pattern for each fan setup. It shows where air goes and roughly how fast, not exact concentrations. Check a real build with the breath test and an empty-box flush before collecting data.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- design data ---------- */
+const DESIGNS=[
+ {id:"now",tab:"Now",sub:"still box",title:"Now: still box, chicken on the floor",rack:false,
+  sensor:{pos:[0.55,1.84,0],inBox:true,label:"Sensors at the top (now)"},
+  fans:[],filter:null,
+  phases:[
+   {id:"sample",label:"Sample",chicken:true,text:"No fan. Gas leaves the chicken by diffusion. Ammonia drifts up, the heavier gases settle, and the gas under the chicken stays trapped against the floor. At the top, the sensor mostly sees the ammonia that rises; the heavier gases take much longer to get there."},
+   {id:"purge",label:"Purge (open lid)",chicken:false,lid:true,text:"Chicken out, lid open. Only warm air rising carries gas out, so the bottom of the box clears slowly. This is why the baseline often came back high."}],
+  card:{fan:"none",sensor:"at the top of the box (lid)",box:"closed, chicken lies on the floor",
+   pros:["Already built","Strong signal: gas builds up for 5 min"],
+   cons:["Gas under the chicken stays trapped","Reading depends on where the gas happens to drift","Purge by hand, slow at the bottom"],
+   verdict:"Fine for learning. The position of the chicken and the drift add noise."}},
+ {id:"A",tab:"A",sub:"stir fan",title:"A: one stir fan + rack",rack:true,
+  sensor:{pos:[-1.42,1.1,0],inBox:true,label:"Sensors (side wall)"},
+  fans:[{pos:[-1.12,1.72,0],axis:"x",label:"Stir fan",on:["sample","purge"]}],filter:null,
+  phases:[
+   {id:"sample",label:"Sample (stir on)",chicken:true,text:"The fan blows along the top, the air turns down the far wall, sweeps under the rack and comes back up the near wall, past the sensors and into the fan. Gas from the underside now reaches the sensor within seconds."},
+   {id:"purge",label:"Purge (open lid)",chicken:false,lid:true,text:"Lid open, fan still running. The loop lifts gas from the bottom to the opening, so the box clears much faster than the still box."}],
+  card:{fan:"1 × 40 mm inside, top corner, blowing along the lid",sensor:"side wall, in the return flow just before the fan",box:"same box + rack",
+   pros:["Cheapest upgrade: 1 fan + rack","Sensor sees mixed air, so position matters less","Faster purge"],
+   cons:["Still opens the lid to purge","Fan must run in the baseline too","Fan inside the box gets dirty"],
+   verdict:"Good first step if you want one change this week."}},
+ {id:"B",tab:"B",sub:"side loop",title:"B: side loop tube with sensors outside",rack:true,
+  sensor:{pos:[1.85,0.75,0],inBox:false,label:"Sensors in tube"},
+  fans:[{pos:[1.85,1.35,0],axis:"y",label:"Loop fan",on:["sample","purge"]}],
+  filter:{pos:[-1.6,1.85,0],label:"Carbon filter (purge)"},
+  ports:{sample:[1.45,0.12,0],purge:[1.45,0.12,0]},
+  paths:{sample:[[1.5,0.12,0],[1.85,0.12,0],[1.85,1.85,0],[1.5,1.85,0]],purge:[[1.5,0.12,0],[1.85,0.12,0],[1.85,1.85,0],[2.45,1.85,0]]},
+  reinject:{sample:[1.35,1.82,0]},
+  phases:[
+   {id:"sample",label:"Sample (loop)",chicken:true,text:"The fan pulls air from the floor under the rack, through the tube past the sensors, and returns it at the top. Gas from the underside is the first thing the sensors see, and the same air keeps circulating."},
+   {id:"purge",label:"Purge (valve to outside)",chicken:false,text:"A valve sends the tube to the outside and clean air enters through the carbon filter. No lid to open, and the sensors sit outside the box where they are easy to clean."}],
+  card:{fan:"1 × 40 mm in the tube, after the sensors",sensor:"in the tube, outside the box",box:"rack + 2 ports + tube loop + valve + filter",
+   pros:["Pulls from under the chicken first","Sensors outside: easy to clean, no heater warming the box","Purge without opening"],
+   cons:["Tube, valve and seals to build","Leaks change the flow","More smell surfaces to clean"],
+   verdict:"Most even reading, most plumbing."}},
+ {id:"C",tab:"C",sub:"through-flow",title:"C: through-flow, like the handheld",rack:true,
+  sensor:{pos:[2.0,1.85,0],inBox:false,label:"Sensor chamber"},
+  fans:[{pos:[2.32,1.85,0],axis:"x",label:"Fan (after sensors)",on:["sample","purge"]}],
+  filter:{pos:[-1.6,0.15,0],label:"Carbon filter inlet"},
+  ports:{sample:[1.45,1.85,0],purge:[1.45,1.85,0]},
+  paths:{sample:[[1.5,1.85,0],[2.0,1.85,0],[2.75,1.85,0]],purge:[[1.5,1.85,0],[2.0,1.85,0],[2.75,1.85,0]]},
+  phases:[
+   {id:"sample",label:"Sample (flow on)",chicken:true,text:"Clean air enters low through the filter, sweeps past and under the chicken, and leaves at the top through the sensor chamber. The reading settles at a steady level set by how fast the chicken gives off gas against how fast the fan pulls."},
+   {id:"purge",label:"Purge (no chicken)",chicken:false,text:"Same fan, chicken out. The box flushes itself and the baseline is filtered air every time. Same principle as the handheld sniffer, so this data transfers best to the product."}],
+  card:{fan:"1 × 40 mm on the outlet, after the sensor chamber",sensor:"small chamber on the outlet",box:"rack + low inlet with filter + high outlet",
+   pros:["Same principle as the handheld: data carries over","Purge and baseline are automatic","Steady reading, no build-up timing"],
+   cons:["Air dilutes the gas, so a fresh chicken gives a small signal","Needs a very steady fan speed","Different numbers from your current data"],
+   verdict:"Best for the product. Collect paired runs with the old box first."}},
+ {id:"D",tab:"D",sub:"hold · mix · flush",rec:true,title:"D: hold, mix, flush",rack:true,
+  sensor:{pos:[-1.42,1.1,0],inBox:true,label:"Sensors (side wall)"},
+  fans:[{pos:[-1.12,1.72,0],axis:"x",label:"Stir fan",on:["mix"]},{pos:[1.72,1.85,0],axis:"x",label:"Exhaust fan",on:["purge"]}],
+  filter:{pos:[-1.6,0.15,0],label:"Carbon filter inlet"},
+  ports:{purge:[1.45,1.85,0]},
+  paths:{purge:[[1.5,1.85,0],[2.2,1.85,0]]},
+  phases:[
+   {id:"hold",label:"1 · Hold",chicken:true,text:"Fans off, ports capped, like your current 5-minute sample. Gas builds up for a strong signal. The rack lets the underside breathe."},
+   {id:"mix",label:"2 · Mix + read",chicken:true,text:"The stir fan runs for 20–30 s. The built-up gas from the floor, the top and under the chicken is evened out, and the sensor reads the average. Take the value at the end of the mix."},
+   {id:"purge",label:"3 · Flush",chicken:false,text:"Chicken out, caps off. The exhaust fan pulls clean air in through the carbon filter, low on the far side, and out at the top. The box is ready for the next baseline without opening the lid."}],
+  card:{fan:"stir fan inside (top corner) + exhaust fan on the outlet",sensor:"side wall, in the stir loop's return path",box:"rack + capped filter inlet low + outlet high",
+   pros:["Keeps the strong 5-minute signal you already collect","Mix makes the reading repeatable","Flush with filtered air, no lid"],
+   cons:["2 fans, 2 caps and a filter","Arduino has to time the fans","Baseline must use the same hold + mix"],
+   verdict:"Recommended for the next 10 chickens."}},
+ {id:"E",tab:"E",sub:"fan under + V-hood",title:"E: fan under the chicken + V-hood",rack:true,hood:{chimney:false},
+  sensor:{pos:[0,1.74,0],inBox:true,label:"Sensors in hood throat"},
+  fans:[{pos:[0,0.14,0],axis:"y",label:"Fan under rack, blowing up",on:["sample","purge"]}],filter:null,
+  phases:[
+   {id:"sample",label:"Sample (fan up)",chicken:true,text:"The fan under the rack blows up through the grid and around the chicken. The V-shaped hood above catches that air and squeezes it into a narrow throat, where the sensors sit. The air leaves the throat, spreads under the lid, runs down the walls and back to the fan."},
+   {id:"purge",label:"Purge (open lid)",chicken:false,lid:true,text:"Chicken out, lid open, fan still blowing up. The column of air pushes the box empty from the bottom."}],
+  card:{fan:"under the rack, blowing up through the chicken",sensor:"in the narrow throat at the top of a V-shaped hood over the chicken",box:"rack + hood (funnel) + fan in the floor",
+   pros:["Air from under the chicken goes straight to the sensors","The hood focuses the smell onto the sensors","Strong, fast signal"],
+   cons:["Juice drips onto the fan: needs a drip shield over it","Blows straight on the chicken, drying and cooling the skin","Steam goes straight to the sensors, so MQ-135 humidity effect is bigger","Air passes the motor before the sensors"],
+   verdict:"The airflow idea works. Move the fan to the top of the hood (F) to fix the drips and the motor air."}},
+ {id:"F",tab:"F",sub:"chimney hood",title:"F: V-hood chimney, fan on top",rack:true,hood:{chimney:true},
+  sensor:{pos:[0,1.72,0],inBox:true,label:"Sensors in throat"},
+  fans:[{pos:[0,2.12,0],axis:"y",label:"Fan on chimney (after sensors)",on:["sample","purge"]}],
+  filter:{pos:[-1.6,0.15,0],label:"Carbon filter inlet (flush)"},
+  phases:[
+   {id:"sample",label:"Sample (fan low, loop)",chicken:true,text:"The fan on top of the chimney pulls air up through the rack, around the chicken and its underside, into the V-hood and past the sensors in the throat. A return slot sends it back down the walls, so the same air keeps passing the chicken and the smell builds up."},
+   {id:"purge",label:"Flush (to outside)",chicken:false,text:"A flap sends the chimney outside and clean air comes in low through the carbon filter. The box flushes from the bottom up along the same path the sample took."}],
+  card:{fan:"on top of the hood's chimney, after the sensors",sensor:"in the hood throat, just below the fan",box:"rack + V-hood with a chimney through the lid + filter inlet low",
+   pros:["Everything the sensor sees has just passed the chicken, underside included","Fan after the sensors, away from drips","Flush uses the same path, no lid to open"],
+   cons:["A hood to make (cut bottle, plastic sheet or 3D print)","Throat air must stay slow and steady","Needs a flap to switch loop / flush"],
+   verdict:"Best signal per chicken. Build it once D works."}}
+];
+
+/* ---------- UI scaffolding (works without WebGL) ---------- */
+let dIndex=4, pIndex=0;
+const tabs=$("tabs");
+DESIGNS.forEach((d,i)=>{
+  const b=document.createElement("button");
+  b.className="tab";b.type="button";b.setAttribute("role","tab");b.id="tab-"+d.id;
+  b.innerHTML="<b>"+d.tab+(d.rec?'<span class="rec">pick</span>':"")+"</b><span>"+d.sub+"</span>";
+  b.addEventListener("click",()=>selectDesign(i));
+  tabs.appendChild(b);
+});
+const cards=$("cards");
+DESIGNS.forEach((d,i)=>{
+  const c=document.createElement("article");c.className="card"+(d.rec?" pick":"");
+  c.innerHTML="<h3>"+d.title+"</h3><dl><dt>Fan</dt><dd>"+d.card.fan+"</dd><dt>Sensor</dt><dd>"+d.card.sensor+"</dd><dt>Box</dt><dd>"+d.card.box+"</dd></dl>"+
+   '<div class="pc">'+d.card.pros.map(p=>'<span class="pro">'+p+"</span>").join("")+d.card.cons.map(p=>'<span class="con">'+p+"</span>").join("")+"</div>"+
+   '<p class="verdict">'+d.card.verdict+'</p><button class="btn open" type="button">Show in 3D</button>';
+  c.querySelector(".open").addEventListener("click",()=>{selectDesign(i);$("view").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});});
+  cards.appendChild(c);
+});
+
+if(!window.THREE||!THREE.OrbitControls){
+  $("view").insertAdjacentHTML("beforeend",'<p class="err">The 3D view could not load. The design notes below still apply.</p>');
+  return;
+}
+
+/* ---------- three.js scene ---------- */
+const view=$("view"), labelsEl=$("labels");
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+view.insertBefore(renderer.domElement,labelsEl);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.05,100);
+camera.position.set(3.4,3.1,5.6);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.target.set(0.25,0.85,0);controls.enableDamping=true;controls.minDistance=2.4;controls.maxDistance=12;controls.update();
+scene.add(new THREE.HemisphereLight(0xffffff,0x6a776f,0.95));
+const sun=new THREE.DirectionalLight(0xffffff,0.55);sun.position.set(3,6,4);scene.add(sun);
+
+const M={
+  edge:new THREE.LineBasicMaterial({color:0x5c6d66}),
+  face:new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.07,side:THREE.DoubleSide,depthWrite:false}),
+  floor:new THREE.MeshLambertMaterial({color:0xcccccc}),
+  chicken:new THREE.MeshLambertMaterial({color:0xe2a983}),
+  rack:new THREE.LineBasicMaterial({color:0x888888}),
+  fan:new THREE.MeshLambertMaterial({color:0x0d6b61}),
+  sensorBody:new THREE.MeshLambertMaterial({color:0x666666}),
+  sensorRing:new THREE.MeshBasicMaterial({color:0xc0392b,transparent:true,opacity:0.5,depthWrite:false}),
+  duct:new THREE.MeshLambertMaterial({color:0x888888,transparent:true,opacity:0.22,depthWrite:false}),
+  ductOff:new THREE.MeshLambertMaterial({color:0x888888,transparent:true,opacity:0.08,depthWrite:false}),
+  filter:new THREE.MeshLambertMaterial({color:0x333333}),
+  port:new THREE.MeshBasicMaterial({color:0x5c6d66}),
+  hood:new THREE.MeshLambertMaterial({color:0x888888,transparent:true,opacity:0.3,side:THREE.DoubleSide,depthWrite:false})
+};
+const C={nh3:new THREE.Color(),voc:new THREE.Color(),air:new THREE.Color()};
+
+/* fixed: bench + box */
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),M.floor);floor.rotation.x=-Math.PI/2;floor.position.y=-0.002;
+const boxGeo=new THREE.BoxGeometry(3,2,2);
+const boxFaces=new THREE.Mesh(boxGeo,M.face);boxFaces.position.y=1;scene.add(boxFaces);
+const boxEdges=new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo),M.edge);boxEdges.position.y=1;scene.add(boxEdges);
+const lidPivot=new THREE.Group();lidPivot.position.set(0,2,-1);scene.add(lidPivot);
+const lidGeo=new THREE.BoxGeometry(3,0.03,2);
+const lid=new THREE.Mesh(lidGeo,M.face);lid.position.set(0,0.015,1);lidPivot.add(lid);
+const lidEdge=new THREE.LineSegments(new THREE.EdgesGeometry(lidGeo),M.edge);lidEdge.position.copy(lid.position);lidPivot.add(lidEdge);
+let lidAngle=0;
+
+/* design group */
+let dg=null, fanObjs=[], sensorRing=null, labels=[];
+function addLabel(text,pos,hot){const el=document.createElement("span");el.className="lbl"+(hot?" hot":"");el.textContent=text;labelsEl.appendChild(el);labels.push({el,v:new THREE.Vector3(...pos)});}
+function tubeAlong(pts,r,mat){
+  const path=new THREE.CurvePath();
+  for(let i=0;i<pts.length-1;i++)path.add(new THREE.LineCurve3(new THREE.Vector3(...pts[i]),new THREE.Vector3(...pts[i+1])));
+  return new THREE.Mesh(new THREE.TubeGeometry(path,40,r,10,false),mat);
+}
+function makeFan(f){
+  const g=new THREE.Group();
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.17,0.022,8,28),M.fan);g.add(ring);
+  const hub=new THREE.Group();
+  for(let k=0;k<4;k++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.15,0.012),M.fan);b.position.y=0.075;const h=new THREE.Group();h.rotation.z=k*Math.PI/2;b.rotation.y=0.5;h.add(b);hub.add(h);}
+  g.add(hub);g.position.set(...f.pos);
+  if(f.axis==="x")g.rotation.y=Math.PI/2; else if(f.axis==="y")g.rotation.x=Math.PI/2;
+  return {g,hub,f};
+}
+function buildDesign(d){
+  if(dg){scene.remove(dg);dg.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+  labelsEl.innerHTML="";labels=[];fanObjs=[];
+  dg=new THREE.Group();scene.add(dg);
+  const chickY=d.rack?0.3+0.36:0.36;
+  CH.y=chickY;
+  const chicken=new THREE.Mesh(new THREE.SphereGeometry(1,28,18),M.chicken);
+  chicken.scale.set(CH.rx,CH.ry,CH.rz);chicken.position.set(0,chickY,0);chicken.name="chicken";dg.add(chicken);
+  addLabel("Chicken",[0,chickY+0.45,0]);
+  if(d.rack){
+    const pts=[];const y=0.3;
+    for(let x=-1.0;x<=1.001;x+=0.2){pts.push(x,y,-0.75,x,y,0.75);}
+    for(let z=-0.75;z<=0.751;z+=0.25){pts.push(-1.0,y,z,1.0,y,z);}
+    [[-1,-0.75],[1,-0.75],[-1,0.75],[1,0.75]].forEach(([x,z])=>pts.push(x,0,z,x,y,z));
+    const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pts,3));
+    dg.add(new THREE.LineSegments(g,M.rack));
+    addLabel("Rack 2–3 cm",[-0.95,0.32,0.75]);
+  }
+  if(d.hood){
+    const hood=new THREE.Mesh(new THREE.CylinderGeometry(0.17,1.0,0.45,4,1,true),M.hood);hood.rotation.y=Math.PI/4;hood.position.y=1.375;dg.add(hood);
+    const top=d.hood.chimney?2.3:1.92, th=top-1.6;
+    const thr=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,th,20,1,true),M.hood);thr.position.y=1.6+th/2;dg.add(thr);
+    addLabel("V-hood",[0.85,1.25,0.5]);
+    if(d.hood.chimney)addLabel("Return slot",[0.95,1.95,0.6]);
+  }
+  // sensors
+  const s=d.sensor, sg=new THREE.Group();
+  for(let k=0;k<2;k++){const c=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,0.1,16),M.sensorBody);c.position.set(0,0,(k-0.5)*0.17);sg.add(c);}
+  sensorRing=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),M.sensorRing);sg.add(sensorRing);
+  sg.position.set(...s.pos);dg.add(sg);
+  addLabel(s.label,[s.pos[0],s.pos[1]+0.28,s.pos[2]],true);
+  // fans
+  d.fans.forEach(f=>{const o=makeFan(f);dg.add(o.g);fanObjs.push(o);addLabel(f.label,[f.pos[0],f.pos[1]+0.3,f.pos[2]]);});
+  // filter
+  if(d.filter){const fl=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.24,0.42),M.filter);fl.position.set(...d.filter.pos);dg.add(fl);addLabel(d.filter.label,[d.filter.pos[0]-0.1,d.filter.pos[1]+0.3,d.filter.pos[2]]);}
+  // ducts
+  if(d.paths){
+    const done={};
+    Object.keys(d.paths).forEach(k=>{const key=JSON.stringify(d.paths[k]);if(done[key])return;done[key]=1;
+      const t=tubeAlong(d.paths[k],0.07,M.duct);t.userData.phase=k;dg.add(t);});
+    if(d.id==="B")addLabel("Valve: loop or outside",[2.1,2.1,0]);
+    if(d.id==="C")addLabel("Outlet",[1.5,2.15,0]);
+  }
+  if(d.ports){const seen={};Object.values(d.ports).forEach(p=>{const k=p.join();if(seen[k])return;seen[k]=1;const r=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.015,6,20),M.port);r.position.set(1.5,p[1],p[2]);r.rotation.y=Math.PI/2;dg.add(r);});}
+  applyLabelVisibility();
+}
+
+/* ---------- particles ---------- */
+const MAX=1600, AIRN=320;
+const pos=new Float32Array(MAX*3), col=new Float32Array(MAX*3);
+const alive=new Uint8Array(MAX), mode=new Uint8Array(MAX), sp=new Uint8Array(MAX), trapped=new Uint8Array(MAX);
+const dist=new Float32Array(MAX);
+const gGeo=new THREE.BufferGeometry();
+gGeo.setAttribute("position",new THREE.BufferAttribute(pos,3));gGeo.setAttribute("color",new THREE.BufferAttribute(col,3));
+const gMat=new THREE.PointsMaterial({size:0.055,vertexColors:true,transparent:true,opacity:0.95,depthWrite:false});
+const gas=new THREE.Points(gGeo,gMat);gas.frustumCulled=false;scene.add(gas);
+const apos=new Float32Array(AIRN*3), aage=new Float32Array(AIRN);
+const aGeo=new THREE.BufferGeometry();aGeo.setAttribute("position",new THREE.BufferAttribute(apos,3));
+const aMat=new THREE.PointsMaterial({size:0.035,color:0x7f978e,transparent:true,opacity:0.55,depthWrite:false});
+const airPts=new THREE.Points(aGeo,aMat);airPts.frustumCulled=false;scene.add(airPts);
+
+const CH={rx:0.7,ry:0.36,rz:0.48,y:0.66};
+const B={x:1.46,y0:0.03,y1:1.96,z:0.96};
+function kill(i){alive[i]=0;mode[i]=0;trapped[i]=0;pos[i*3]=0;pos[i*3+1]=-50;pos[i*3+2]=0;}
+for(let i=0;i<MAX;i++)kill(i);
+function rnd(a,b){return a+Math.random()*(b-a);}
+function seedAir(i){apos[i*3]=rnd(-1.4,1.4);apos[i*3+1]=rnd(0.08,1.9);apos[i*3+2]=rnd(-0.9,0.9);aage[i]=rnd(0,6);}
+for(let i=0;i<AIRN;i++)seedAir(i);
+
+function setColor(i){const c=sp[i]?C.voc:C.nh3;const f=trapped[i]?0.55:1;col[i*3]=c.r*f;col[i*3+1]=c.g*f;col[i*3+2]=c.b*f;}
+let cursor=0;
+function spawn(){
+  const d=DESIGNS[dIndex];
+  for(let n=0;n<MAX;n++){const i=(cursor+n)%MAX;if(alive[i])continue;cursor=i+1;
+    let u=rnd(-1,1),th=rnd(0,Math.PI*2),r=Math.sqrt(1-u*u);
+    let sx=r*Math.cos(th),sy=u,sz=r*Math.sin(th);
+    if(Math.random()<0.35){sy=-Math.abs(sy)-0.4;const l=Math.hypot(sx,sy,sz);sx/=l;sy/=l;sz/=l;}
+    alive[i]=1;mode[i]=0;sp[i]=Math.random()<0.5?0:1;trapped[i]=0;
+    if(sy<-0.55&&!d.rack){trapped[i]=1;pos[i*3]=sx*CH.rx*0.85;pos[i*3+1]=0.04;pos[i*3+2]=sz*CH.rz*0.85;}
+    else{pos[i*3]=sx*CH.rx*1.04;pos[i*3+1]=CH.y+sy*CH.ry*1.04;pos[i*3+2]=sz*CH.rz*1.04;}
+    setColor(i);return;}
+}
+
+/* ---------- air pattern per design + phase ---------- */
+const v={x:0,y:0,z:0};
+function stir(x,y,s,dir){
+  const u=x/1.4,w=(y-1.0)/0.95,r=Math.hypot(u,w)+1e-6;
+  let tx=w*1.4*dir,ty=-u*0.95*dir;const tl=Math.hypot(tx,ty)+1e-6;
+  const g=r<0.7?r/0.7:(r<1.08?1:0.45);
+  v.x+=tx/tl*s*g;v.y+=ty/tl*s*g;
+}
+function through(x,y,z,I,O,s){
+  let ax=O[0]-x,ay=O[1]-y,az=O[2]-z;let al=Math.hypot(ax,ay,az)+1e-6;
+  let bx=x-I[0],by=y-I[1],bz=z-I[2];let bl=Math.hypot(bx,by,bz)+1e-6;
+  let dx=0.65*ax/al+0.35*bx/bl,dy=0.65*ay/al+0.35*by/bl,dz=0.65*az/al+0.35*bz/bl;const dl=Math.hypot(dx,dy,dz)+1e-6;
+  v.x+=dx/dl*s;v.y+=dy/dl*s;v.z+=dz/dl*s;
+}
+function sink(x,y,z,P,R,s){
+  const dx=P[0]-x,dy=P[1]-y,dz=P[2]-z,dd=Math.hypot(dx,dy,dz);
+  if(dd<R){const a=1-dd/R;v.x=v.x*(1-a)+dx/dd*s*a;v.y=v.y*(1-a)+dy/dd*s*a;v.z=v.z*(1-a)+dz/dd*s*a;}
+}
+function hoodFlow(x,y,z,s){
+  const r=Math.hypot(x,z)+1e-6, yc=1.0, rc=1.0;
+  let vr=(y-yc)/0.85, vy=-(r-rc)/0.9;const n=Math.hypot(vr,vy)+1e-6;
+  const dd=Math.hypot((r-rc)/0.9,(y-yc)/0.85), g=dd<0.25?dd/0.25:1;
+  vr=vr/n*s*g;vy=vy/n*s*g;
+  if(y>1.08&&y<1.62){const Rh=0.71+(0.17-0.71)*Math.max(0,(y-1.15))/0.45;if(r<Rh+0.05){vr=-0.9*s*(r/Rh);vy=0.7*s;}}
+  if(y>=1.56&&r<0.22){vr=-r*3;vy=1.5*s;}
+  if(y>1.86&&r<0.4){vr=1.3*s;vy=-0.1*s;}
+  v.x+=vr*x/r;v.z+=vr*z/r;v.y+=vy;
+}
+function field(x,y,z,key){
+  v.x=v.y=v.z=0;
+  switch(key){
+    case "now:purge": v.y=0.12;break;
+    case "A:sample": case "A:purge": case "D:mix": stir(x,y,0.95,1);break;
+    case "B:sample": stir(x,y,0.85,-1);sink(x,y,z,[1.45,0.12,0],0.85,1.3);break;
+    case "B:purge": through(x,y,z,[-1.45,1.85,0],[1.45,0.12,0],0.85);sink(x,y,z,[1.45,0.12,0],0.5,1.1);break;
+    case "E:sample": case "E:purge": case "F:sample": case "F:purge": hoodFlow(x,y,z,0.9);break;
+    case "C:sample": case "C:purge": case "D:purge": through(x,y,z,[-1.45,0.15,0],[1.45,1.85,0],0.75);sink(x,y,z,[1.45,1.85,0],0.5,1.1);break;
+  }
+}
+
+/* duct paths */
+function pathLen(p){let L=0;for(let i=0;i<p.length-1;i++)L+=Math.hypot(p[i+1][0]-p[i][0],p[i+1][1]-p[i][1],p[i+1][2]-p[i][2]);return L;}
+function pathAt(p,s,out){for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]);if(s<=L||i===p.length-2){const t=Math.min(1,s/L);out[0]=a[0]+(b[0]-a[0])*t;out[1]=a[1]+(b[1]-a[1])*t;out[2]=a[2]+(b[2]-a[2])*t;return;}s-=L;}}
+const tmp=[0,0,0];
+
+/* ---------- state ---------- */
+let simT=0, phaseT=0, emitAcc=0, running=true, showLabels=true, showAir=true;
+const HIST=400; let hist=[], histAcc=0, lastSensor=0, lastBox=0, lastTrap=0, peak=10;
+function curPhase(){return DESIGNS[dIndex].phases[pIndex];}
+function key(){return DESIGNS[dIndex].id+":"+curPhase().id;}
+function fanOn(f){return f.on.indexOf(curPhase().id)>=0;}
+
+function step(dt){
+  const d=DESIGNS[dIndex],ph=curPhase(),k=key();
+  simT+=dt;phaseT+=dt;
+  if(ph.chicken){emitAcc+=dt*40;while(emitAcc>=1){emitAcc-=1;spawn();}}
+  const port=d.ports&&d.ports[ph.id], path=d.paths&&d.paths[ph.id], L=path?pathLen(path):0;
+  const reinj=d.reinject&&d.reinject[ph.id];
+  const sq=Math.sqrt(dt)*0.16;
+  const sP=d.sensor.pos;
+  for(let i=0;i<MAX;i++){
+    if(!alive[i])continue;
+    const j=i*3;
+    if(trapped[i]){
+      if(Math.random()<dt*0.035){trapped[i]=0;const a=Math.atan2(pos[j+2]/CH.rz,pos[j]/CH.rx);pos[j]=Math.cos(a)*CH.rx*1.06;pos[j+2]=Math.sin(a)*CH.rz*1.06;pos[j+1]=0.06;setColor(i);}
+      continue;
+    }
+    if(mode[i]===1){
+      dist[i]+=dt*1.25;
+      if(dist[i]>=L){
+        if(reinj){mode[i]=0;pos[j]=reinj[0];pos[j+1]=reinj[1]+rnd(-0.05,0.05);pos[j+2]=reinj[2]+rnd(-0.2,0.2);}
+        else kill(i);
+      } else {pathAt(path,dist[i],tmp);pos[j]=tmp[0];pos[j+1]=tmp[1]+rnd(-0.02,0.02);pos[j+2]=tmp[2]+rnd(-0.02,0.02);}
+      continue;
+    }
+    let x=pos[j],y=pos[j+1],z=pos[j+2];
+    field(x,y,z,k);
+    v.y+=sp[i]?-0.035:0.045;
+    if(d.sensor.inBox){const dx=x-sP[0],dy=y-sP[1],dz=z-sP[2];if(dx*dx+dy*dy+dz*dz<0.12)v.y+=0.1;}
+    x+=v.x*dt+rnd(-1,1)*sq;y+=v.y*dt+rnd(-1,1)*sq;z+=v.z*dt+rnd(-1,1)*sq;
+    if(x<-B.x)x=-B.x;if(x>B.x)x=B.x;if(z<-B.z)z=-B.z;if(z>B.z)z=B.z;if(y<B.y0)y=B.y0;if(y>B.y1)y=B.y1;
+    if(ph.chicken){const ex=x/CH.rx,ey=(y-CH.y)/CH.ry,ez=z/CH.rz,e=ex*ex+ey*ey+ez*ez;if(e<1){const f=1/Math.sqrt(e+1e-6)*1.01;x=ex*f*CH.rx;y=CH.y+ey*f*CH.ry;z=ez*f*CH.rz;}}
+    if(ph.lid&&y>1.88&&Math.random()<dt*2.2){kill(i);continue;}
+    if(d.hood&&d.hood.chimney&&y>1.88&&Math.hypot(x,z)<0.22){
+      if(ph.id==="purge"){kill(i);continue;}
+      const a=rnd(0,Math.PI*2);x=Math.cos(a)*1.25;z=Math.sin(a)*0.85;y=1.84;
+    }
+    if(d.filter&&!ph.chicken&&d.id==="B"){}
+    if(port){const dx=x-port[0],dy=y-port[1],dz=z-port[2];if(dx*dx+dy*dy+dz*dz<0.045){mode[i]=1;dist[i]=0;}}
+    pos[j]=x;pos[j+1]=y;pos[j+2]=z;
+  }
+  // air tracers
+  for(let i=0;i<AIRN;i++){
+    const j=i*3;let x=apos[j],y=apos[j+1],z=apos[j+2];
+    field(x,y,z,k);
+    x+=v.x*dt+rnd(-1,1)*sq*0.4;y+=v.y*dt+rnd(-1,1)*sq*0.4;z+=v.z*dt+rnd(-1,1)*sq*0.4;
+    aage[i]+=dt;
+    let reset=aage[i]>7||x<-B.x||x>B.x||y<B.y0||y>B.y1||z<-B.z||z>B.z;
+    if(port){const dx=x-port[0],dy=y-port[1],dz=z-port[2];if(dx*dx+dy*dy+dz*dz<0.03)reset=true;}
+    if(ph.chicken){const ex=x/CH.rx,ey=(y-CH.y)/CH.ry,ez=z/CH.rz;if(ex*ex+ey*ey+ez*ez<1)reset=true;}
+    if(d.hood&&d.hood.chimney&&y>1.88&&Math.hypot(x,z)<0.22)reset=true;
+    if(reset)seedAir(i);else{apos[j]=x;apos[j+1]=y;apos[j+2]=z;}
+  }
+  // readings
+  let s=0,b=0,t=0;
+  for(let i=0;i<MAX;i++){if(!alive[i])continue;const j=i*3;
+    if(trapped[i]){t++;continue;}
+    if(mode[i]===0)b++;
+    const dx=pos[j]-sP[0],dy=pos[j+1]-sP[1],dz=pos[j+2]-sP[2],r2=dx*dx+dy*dy+dz*dz;
+    if(r2<(d.sensor.inBox?0.11:0.09))s++;}
+  lastSensor=s;lastBox=b;lastTrap=t;
+  histAcc+=dt;while(histAcc>=0.1){histAcc-=0.1;hist.push(s);if(hist.length>HIST)hist.shift();}
+}
+
+/* ---------- UI updates ---------- */
+const phasesEl=$("phases");
+function renderPhases(){
+  phasesEl.innerHTML="";
+  DESIGNS[dIndex].phases.forEach((p,i)=>{const b=document.createElement("button");b.type="button";b.className="ph";b.textContent=p.label;b.setAttribute("aria-pressed",i===pIndex?"true":"false");b.addEventListener("click",()=>selectPhase(i));phasesEl.appendChild(b);});
+  $("explain").textContent=curPhase().text;
+  const d=DESIGNS[dIndex];
+  $("dname").textContent=d.rec?"Design "+d.tab+" · recommended":(d.id==="now"?"Your current box":"Design "+d.tab);
+  $("dtitle").textContent=d.title;
+  $("sThirdK").textContent=d.rack?"Under chicken":"Trapped under";
+}
+function selectPhase(i){pIndex=i;phaseT=0;renderPhases();}
+function selectDesign(i){
+  dIndex=i;pIndex=0;
+  [...tabs.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i?"true":"false"));
+  for(let n=0;n<MAX;n++)kill(n);
+  for(let n=0;n<AIRN;n++)seedAir(n);
+  hist=[];peak=10;simT=0;phaseT=0;emitAcc=0;
+  buildDesign(DESIGNS[i]);renderPhases();
+  for(let n=0;n<180;n++)step(1/30); // pre-roll 6 s so the view opens mid-run
+}
+function applyLabelVisibility(){labelsEl.style.display=showLabels?"":"none";}
+$("tglLabels").addEventListener("click",e=>{showLabels=!showLabels;e.currentTarget.setAttribute("aria-pressed",String(showLabels));applyLabelVisibility();});
+$("tglAir").addEventListener("click",e=>{showAir=!showAir;e.currentTarget.setAttribute("aria-pressed",String(showAir));airPts.visible=showAir;});
+$("play").addEventListener("click",e=>{running=!running;e.currentTarget.textContent=running?"Pause":"Play";e.currentTarget.setAttribute("aria-pressed",String(!running));});
+$("reset").addEventListener("click",()=>selectDesign(dIndex));
+
+/* chart */
+const chart=$("chart"),cx=chart.getContext("2d");
+function drawChart(){
+  const w=chart.clientWidth,h=chart.clientHeight,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(chart.width!==Math.round(w*dpr)){chart.width=Math.round(w*dpr);chart.height=Math.round(h*dpr);}
+  cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,w,h);
+  const line=css("--line"),muted=css("--muted"),acc=css("--sensor");
+  const pad={l:28,r:6,t:8,b:16};
+  let mx=10;for(const x of hist)if(x>mx)mx=x;peak=Math.max(peak*0.995,mx);const top=Math.ceil(peak*1.15/5)*5;
+  cx.strokeStyle=line;cx.lineWidth=1;cx.fillStyle=muted;cx.font="10px "+css("--f-mono");
+  for(let g=0;g<=2;g++){const yy=pad.t+(h-pad.t-pad.b)*(1-g/2);cx.beginPath();cx.moveTo(pad.l,yy);cx.lineTo(w-pad.r,yy);cx.stroke();cx.fillText(String(Math.round(top*g/2)),2,yy+3);}
+  cx.fillText("−40 s",pad.l,h-3);const nw="now";cx.fillText(nw,w-pad.r-cx.measureText(nw).width,h-3);
+  if(hist.length<2)return;
+  const X=i=>pad.l+(w-pad.l-pad.r)*(i+(HIST-hist.length))/(HIST-1), Y=val=>pad.t+(h-pad.t-pad.b)*(1-val/top);
+  cx.beginPath();hist.forEach((val,i)=>{i?cx.lineTo(X(i),Y(val)):cx.moveTo(X(i),Y(val));});
+  cx.strokeStyle=acc;cx.lineWidth=2;cx.stroke();
+  cx.lineTo(X(hist.length-1),Y(0));cx.lineTo(X(0),Y(0));cx.closePath();cx.globalAlpha=0.12;cx.fillStyle=acc;cx.fill();cx.globalAlpha=1;
+  cx.beginPath();cx.arc(X(hist.length-1),Y(hist[hist.length-1]),3,0,Math.PI*2);cx.fillStyle=acc;cx.fill();
+}
+
+/* theme */
+function applyTheme(){
+  scene.background=new THREE.Color(css("--scene"));
+  M.edge.color.set(css("--edge"));M.port.color.set(css("--edge"));M.rack.color.set(css("--muted"));
+  M.floor.color.set(css("--bg"));M.face.color.set(css("--edge"));
+  M.chicken.color.set(css("--chicken"));M.fan.color.set(css("--accent"));
+  M.sensorRing.color.set(css("--sensor"));M.sensorBody.color.set(css("--muted"));
+  M.duct.color.set(css("--edge"));M.hood.color.set(css("--edge"));M.ductOff.color.set(css("--edge"));M.filter.color.set(css("--fg"));
+  C.nh3.set(css("--nh3"));C.voc.set(css("--voc"));aMat.color.set(css("--air"));
+  for(let i=0;i<MAX;i++)if(alive[i])setColor(i);
+  gGeo.attributes.color.needsUpdate=true;
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+/* resize */
+const camDir=camera.position.clone().sub(controls.target);const camLen=camDir.length();camDir.normalize();
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();camera.position.copy(controls.target).addScaledVector(camDir,camLen*Math.max(1,1.3/camera.aspect));controls.update();}
+new ResizeObserver(resize).observe(view);
+
+/* loop */
+const pv=new THREE.Vector3();let last=performance.now();
+function frame(now){
+  const realDt=Math.min(0.05,(now-last)/1000);last=now;
+  const d=DESIGNS[dIndex],ph=curPhase();
+  if(running){const dt=realDt*1.0;const n=2;for(let k=0;k<n;k++)step(dt/n*1.6);}
+  // visuals
+  const target=ph.lid?1.05:0;lidAngle+=(target-lidAngle)*Math.min(1,realDt*4);lidPivot.rotation.x=-lidAngle;
+  dg.traverse(o=>{if(o.name==="chicken")o.visible=!!ph.chicken;if(o.userData&&o.userData.phase){const on=o.userData.phase===ph.id||(d.paths&&JSON.stringify(d.paths[o.userData.phase])===JSON.stringify(d.paths[ph.id]));o.material=on?M.duct:M.ductOff;}});
+  fanObjs.forEach(o=>{if(fanOn(o.f)&&running)o.hub.rotation.z+=realDt*22;});
+  const sig=Math.min(1,lastSensor/Math.max(6,peak));sensorRing.material.opacity=0.12+0.55*sig;sensorRing.scale.setScalar(0.8+0.5*sig);
+  const anyFlow=d.fans.some(fanOn)||ph.lid;aMat.opacity=anyFlow?0.6:0.25;
+  gGeo.attributes.position.needsUpdate=true;gGeo.attributes.color.needsUpdate=true;aGeo.attributes.position.needsUpdate=true;
+  controls.update();renderer.render(scene,camera);
+  if(showLabels){const w=view.clientWidth,h=view.clientHeight;labels.forEach(l=>{pv.copy(l.v).project(camera);if(pv.z>1){l.el.style.display="none";return;}l.el.style.display="";l.el.style.left=((pv.x*0.5+0.5)*w)+"px";l.el.style.top=((-pv.y*0.5+0.5)*h)+"px";});}
+  $("sSensor").textContent=lastSensor;$("sBox").textContent=lastBox;$("sThird").textContent=d.rack?"free":lastTrap;
+  drawChart();
+  requestAnimationFrame(frame);
+}
+
+applyTheme();resize();selectDesign(dIndex);
+if(matchMedia("(prefers-reduced-motion: reduce)").matches){running=false;$("play").textContent="Play";$("play").setAttribute("aria-pressed","true");}
+requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
